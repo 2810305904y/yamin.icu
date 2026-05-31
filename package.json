@@ -1,0 +1,12 @@
+{
+  "name": "yamin-icu-homepage",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "preview": "node v1/server.mjs",
+    "test": "node --test v1/tests/render-site.test.mjs",
+    "check": "node --check v1/server.mjs && node --check v1/scripts/render-site.mjs && node --test v1/tests/render-site.test.mjs"
+  }
+}
+

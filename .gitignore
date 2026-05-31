@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Local environment
+.env
+.env.*
+.vercel/
+
+# Local preview and browser artifacts
+v0/chrome-profile*/
+v1/server*.log
+v1/chrome-profile*/
+v0/_verification_*.png
+v1/_verification_*.png
+
+# Build outputs
+dist/
+out/
+.next/
+
+# System files
+Thumbs.db
+.DS_Store
+
