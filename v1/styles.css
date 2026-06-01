@@ -228,6 +228,22 @@ svg {
     transform 180ms ease;
 }
 
+.project-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 22%, rgba(96, 165, 250, 0.12), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.36), transparent 52%);
+  opacity: 0.78;
+}
+
+.project-card > * {
+  position: relative;
+  z-index: 1;
+}
+
 .project-card:hover {
   border-color: rgba(37, 99, 235, 0.72);
   box-shadow:
@@ -243,9 +259,25 @@ svg {
   align-content: center;
   align-items: center;
   justify-items: center;
-  gap: clamp(12px, 1.6vh, 22px);
+  gap: clamp(11px, 1.42vh, 19px);
   padding: clamp(19px, 2vw, 34px);
   text-align: center;
+}
+
+.project-card-large .project-name {
+  margin-top: clamp(2px, 0.45vh, 7px);
+  margin-bottom: clamp(5px, 0.78vh, 10px);
+}
+
+.project-card-large .project-name,
+.project-card-large .project-copy,
+.project-card-large .project-link,
+.project-card-large .status {
+  transform: translateY(clamp(6px, 0.75vh, 10px));
+}
+
+.project-card-large .project-copy {
+  font-size: clamp(12px, 0.9vw, 16px);
 }
 
 .project-card-wide {
@@ -273,15 +305,45 @@ svg {
 }
 
 .project-illustration {
-  width: clamp(80px, 7.2vw, 120px);
-  margin-bottom: clamp(4px, 0.7vh, 10px);
+  display: grid;
+  width: clamp(86px, 7.4vw, 118px);
+  aspect-ratio: 1;
+  place-items: center;
+  margin-bottom: clamp(4px, 0.8vh, 11px);
+  border: 1px solid rgba(147, 197, 253, 0.34);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.9), transparent 42%),
+    rgba(239, 248, 255, 0.72);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 14px 34px rgba(37, 99, 235, 0.11);
   color: var(--blue-500);
   filter: drop-shadow(1px 2px 2px rgba(37, 99, 235, 0.12));
 }
 
+.project-illustration svg {
+  width: 58%;
+  height: 58%;
+}
+
 .wide-icon {
-  width: clamp(48px, 4vw, 72px);
+  display: grid;
+  width: clamp(54px, 4.2vw, 70px);
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid rgba(147, 197, 253, 0.32);
+  border-radius: 18px;
+  background: rgba(239, 248, 255, 0.72);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 10px 22px rgba(37, 99, 235, 0.08);
   color: var(--blue-500);
+}
+
+.wide-icon svg {
+  width: 58%;
+  height: 58%;
 }
 
 .wide-content {
@@ -291,13 +353,13 @@ svg {
 
 .project-name {
   display: block;
-  font-size: clamp(22px, 1.9vw, 36px);
+  font-size: clamp(22px, 1.75vw, 32px);
   font-weight: 850;
   line-height: 1.12;
 }
 
 .project-card-wide .project-name {
-  font-size: clamp(18px, 1.25vw, 25px);
+  font-size: clamp(17px, 1.13vw, 23px);
 }
 
 .project-copy {
@@ -311,7 +373,7 @@ svg {
 
 .project-card-wide .project-copy {
   max-width: none;
-  font-size: clamp(12px, 0.85vw, 15px);
+  font-size: clamp(12px, 0.8vw, 14px);
   line-height: 1.45;
 }
 
@@ -327,7 +389,7 @@ svg {
 }
 
 .project-card-large .status {
-  margin-top: clamp(1px, 0.35vh, 5px);
+  margin-top: clamp(9px, 1.35vh, 18px);
 }
 
 .status-live {
@@ -351,19 +413,29 @@ svg {
 }
 
 .project-link {
-  display: flex;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 28px;
   align-items: center;
-  justify-content: space-between;
-  width: min(100%, 360px);
+  justify-items: center;
+  width: min(70%, 255px);
   min-height: 46px;
   margin-top: clamp(4px, 0.8vh, 10px);
-  padding: 0 20px;
+  padding: 0 14px;
   border: 1.5px solid rgba(59, 130, 246, 0.46);
   border-radius: 999px;
   color: var(--blue-600);
   font-size: clamp(14px, 1vw, 19px);
   font-weight: 750;
   background: rgba(255, 255, 255, 0.42);
+}
+
+.project-link span:first-child {
+  grid-column: 2;
+  text-align: center;
+}
+
+.project-link span:last-child {
+  grid-column: 3;
 }
 
 .round-arrow {
@@ -485,7 +557,7 @@ svg {
 }
 
 .site-signature span {
-  font-size: clamp(22px, 1.75vw, 34px);
+  font-size: clamp(27px, 2.14vw, 42px);
   font-weight: 850;
   line-height: 1;
 }
