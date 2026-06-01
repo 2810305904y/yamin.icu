@@ -3,33 +3,78 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta http-equiv="refresh" content="0; url=/v1/index.html" />
-    <title>Yamin.icu</title>
-    <link rel="canonical" href="/v1/index.html" />
-    <style>
-      body {
-        min-height: 100vh;
-        margin: 0;
-        display: grid;
-        place-items: center;
-        color: #071849;
-        font-family:
-          "Microsoft YaHei",
-          system-ui,
-          sans-serif;
-        background: linear-gradient(135deg, #fff, #eef7ff);
-      }
-
-      a {
-        color: #2563eb;
-        font-weight: 700;
-      }
-    </style>
-    <script>
-      window.location.replace("/v1/index.html");
-    </script>
+    <title>鸦珉.icu - 项目地图 V1</title>
+    <meta name="description" content="一张稍微不太正经的个人项目地图。" />
+    <link rel="canonical" href="/" />
+    <link rel="stylesheet" href="/v1/styles.css" />
+    <script type="module" src="/v1/scripts/render-site.mjs"></script>
   </head>
   <body>
-    <a href="/v1/index.html">正在打开项目地图...</a>
+    <main class="page">
+      <section class="map-frame" aria-label="鸦珉个人主页项目地图">
+        <section class="panel panel-projects" aria-labelledby="projects-title">
+          <header class="section-title">
+            <span class="title-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 2.8 20 7v9.7l-8 4.5-8-4.5V7l8-4.2Z" />
+                <path d="M4.5 7.3 12 11.5l7.5-4.2" />
+                <path d="M12 11.5v8.7" />
+              </svg>
+            </span>
+            <span id="projects-title">项目区</span>
+          </header>
+
+          <div class="projects-grid" data-projects></div>
+        </section>
+
+        <aside class="panel panel-todos" aria-labelledby="todos-title">
+          <header class="section-title section-title-small">
+            <span class="title-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M8 6h12M8 12h12M8 18h12" />
+                <path d="M4 6h.01M4 12h.01M4 18h.01" />
+              </svg>
+            </span>
+            <span id="todos-title">正在进行 / 待办区</span>
+          </header>
+
+          <div class="todo-list" data-todos></div>
+        </aside>
+
+        <section class="panel panel-thoughts" aria-labelledby="thoughts-title">
+          <header class="section-title section-title-small">
+            <span class="title-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M9 18h6" />
+                <path d="M10 22h4" />
+                <path d="M8.2 15.2a6 6 0 1 1 7.6 0c-.9.7-1.3 1.4-1.3 2.3h-5c0-.9-.4-1.6-1.3-2.3Z" />
+              </svg>
+            </span>
+            <span id="thoughts-title">奇怪念头区</span>
+          </header>
+
+          <p class="site-signature">
+            <span data-signature-title>鸦珉.icu</span>
+            <small data-signature-subtitle>一张稍微不太正经的项目地图</small>
+          </p>
+
+          <div data-thoughts></div>
+        </section>
+
+        <aside class="panel panel-social" aria-label="自媒体与视频账号">
+          <header class="section-title section-title-small visually-hidden">
+            <span class="title-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M10 13a5 5 0 0 0 7.1 0l2.1-2.1a5 5 0 1 0-7.1-7.1L10.8 5" />
+                <path d="M14 11a5 5 0 0 0-7.1 0l-2.1 2.1a5 5 0 1 0 7.1 7.1l1.3-1.2" />
+              </svg>
+            </span>
+            <span id="social-title">自媒体</span>
+          </header>
+
+          <nav class="social-list" aria-label="公开视频账号" data-channels></nav>
+        </aside>
+      </section>
+    </main>
   </body>
 </html>

@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 
 import { siteData } from "../content/site-data.mjs";
 import {
@@ -103,4 +104,16 @@ test("planned tools move from project cards into todo list", () => {
   assert.match(todoHtml, /社交媒体方向 App/);
   assert.match(todoHtml, /width: 5%/);
   assert.match(todoHtml, /width: 0%/);
+});
+
+test("root homepage renders directly without redirecting to v1", async () => {
+  const rootHtml = await readFile("index.html", "utf8");
+
+  assert.doesNotMatch(rootHtml, /http-equiv="refresh"/i);
+  assert.doesNotMatch(rootHtml, /window\.location/);
+  assert.doesNotMatch(rootHtml, /url=\/v1/i);
+  assert.match(rootHtml, /href="\/"/);
+  assert.match(rootHtml, /href="\/v1\/styles\.css"/);
+  assert.match(rootHtml, /src="\/v1\/scripts\/render-site\.mjs"/);
+  assert.match(rootHtml, /data-projects/);
 });
