@@ -52,11 +52,11 @@ body::after {
 body::before {
   background-image: url("./assets/cloud-layer.svg");
   background-repeat: repeat-x;
-  background-size: 3600px 900px;
-  background-position: 0 50%;
+  background-size: 2800px 900px;
+  background-position: -420px 50%;
   filter: saturate(0.96) blur(0.6px);
-  opacity: 0.66;
-  animation: cloud-image-drift-left 112s linear infinite;
+  opacity: 0.72;
+  animation: cloud-image-drift-left 96s linear infinite;
 }
 
 body::after {
@@ -118,6 +118,22 @@ body::after {
   min-width: 0;
   min-height: 0;
   padding: clamp(22px, 2.8vw, 58px);
+}
+
+.background-lab .panel > * {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.background-lab .map-frame {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(239, 248, 255, 0.08)),
+    rgba(244, 250, 255, 0.08);
+}
+
+.background-lab .map-frame::before {
+  opacity: 0.16;
 }
 
 .panel-projects {
@@ -686,10 +702,10 @@ svg {
 
 @keyframes cloud-image-drift-left {
   0% {
-    background-position: 0 50%;
+    background-position: -420px 50%;
   }
   100% {
-    background-position: -3600px 50%;
+    background-position: -3220px 50%;
   }
 }
 

@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 
 import { siteData } from "../content/site-data.mjs";
 import {
+  applyBackgroundLabMode,
   escapeHtml,
   getVisibleSortedItems,
   renderChannels,
@@ -30,6 +31,28 @@ test("escapeHtml prevents content from becoming markup", () => {
     escapeHtml('<script>alert("x")</script>'),
     "&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;",
   );
+});
+
+test("background lab mode is controlled by the bg query parameter", () => {
+  global.document = {
+    body: {
+      classList: {
+        value: false,
+        toggle(name, enabled) {
+          assert.equal(name, "background-lab");
+          this.value = enabled;
+        },
+      },
+    },
+  };
+
+  applyBackgroundLabMode("?bg=1");
+  assert.equal(global.document.body.classList.value, true);
+
+  applyBackgroundLabMode("");
+  assert.equal(global.document.body.classList.value, false);
+
+  delete global.document;
 });
 
 test("renderers output the visible homepage content", () => {

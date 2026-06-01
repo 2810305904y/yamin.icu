@@ -181,6 +181,12 @@ export function mountSite(data = siteData) {
   if (targets.signatureSubtitle) targets.signatureSubtitle.textContent = data.identity.subtitle;
 }
 
+export function applyBackgroundLabMode(search = window.location.search) {
+  const params = new URLSearchParams(search);
+  document.body.classList.toggle("background-lab", params.has("bg"));
+}
+
 if (typeof document !== "undefined") {
+  applyBackgroundLabMode();
   mountSite(siteData);
 }

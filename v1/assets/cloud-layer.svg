@@ -1,46 +1,64 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="3600" height="900" viewBox="0 0 3600 900">
+<svg xmlns="http://www.w3.org/2000/svg" width="2800" height="900" viewBox="0 0 2800 900">
   <defs>
-    <radialGradient id="cloud-white" cx="46%" cy="42%" r="64%">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95" />
-      <stop offset="0.52" stop-color="#f6faff" stop-opacity="0.78" />
-      <stop offset="0.78" stop-color="#d7e1ee" stop-opacity="0.28" />
+    <linearGradient id="edge-fade-gradient" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#000000" stop-opacity="0" />
+      <stop offset="0.14" stop-color="#000000" stop-opacity="0" />
+      <stop offset="0.24" stop-color="#ffffff" stop-opacity="1" />
+      <stop offset="0.76" stop-color="#ffffff" stop-opacity="1" />
+      <stop offset="0.88" stop-color="#000000" stop-opacity="0" />
+      <stop offset="1" stop-color="#000000" stop-opacity="0" />
+    </linearGradient>
+    <mask id="edge-fade">
+      <rect width="2800" height="900" fill="url(#edge-fade-gradient)" />
+    </mask>
+    <radialGradient id="cloud-white" cx="46%" cy="42%" r="66%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.96" />
+      <stop offset="0.46" stop-color="#f7fbff" stop-opacity="0.72" />
+      <stop offset="0.72" stop-color="#e2eaf4" stop-opacity="0.28" />
       <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
     </radialGradient>
-    <radialGradient id="cloud-shadow" cx="48%" cy="58%" r="70%">
-      <stop offset="0" stop-color="#728499" stop-opacity="0.3" />
-      <stop offset="0.58" stop-color="#a3b1c1" stop-opacity="0.2" />
+    <radialGradient id="cloud-bright" cx="43%" cy="38%" r="64%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.92" />
+      <stop offset="0.55" stop-color="#ffffff" stop-opacity="0.58" />
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="cloud-shadow" cx="50%" cy="62%" r="74%">
+      <stop offset="0" stop-color="#7b8da3" stop-opacity="0.28" />
+      <stop offset="0.58" stop-color="#adbac9" stop-opacity="0.16" />
       <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
     </radialGradient>
   </defs>
 
-  <rect width="3600" height="900" fill="none" />
+  <rect width="2800" height="900" fill="none" />
 
-  <g opacity="0.2">
-    <ellipse cx="980" cy="330" rx="560" ry="132" fill="url(#cloud-shadow)" />
-    <ellipse cx="2360" cy="520" rx="650" ry="132" fill="url(#cloud-shadow)" />
-    <ellipse cx="2920" cy="355" rx="360" ry="104" fill="url(#cloud-shadow)" />
-  </g>
+  <g mask="url(#edge-fade)">
+    <g opacity="0.28">
+      <ellipse cx="720" cy="390" rx="430" ry="130" fill="url(#cloud-shadow)" />
+      <ellipse cx="1780" cy="520" rx="540" ry="128" fill="url(#cloud-shadow)" />
+      <ellipse cx="2160" cy="360" rx="310" ry="96" fill="url(#cloud-shadow)" />
+    </g>
 
-  <g opacity="0.66">
-    <ellipse cx="650" cy="342" rx="210" ry="84" fill="url(#cloud-white)" />
-    <ellipse cx="900" cy="302" rx="330" ry="116" fill="url(#cloud-white)" />
-    <ellipse cx="1190" cy="338" rx="270" ry="98" fill="url(#cloud-white)" />
-    <ellipse cx="1470" cy="282" rx="250" ry="90" fill="url(#cloud-white)" />
-  </g>
+    <g opacity="0.78">
+      <ellipse cx="520" cy="388" rx="170" ry="82" fill="url(#cloud-white)" />
+      <ellipse cx="650" cy="334" rx="210" ry="104" fill="url(#cloud-bright)" />
+      <ellipse cx="835" cy="350" rx="260" ry="116" fill="url(#cloud-white)" />
+      <ellipse cx="1038" cy="390" rx="210" ry="92" fill="url(#cloud-white)" />
+      <ellipse cx="1190" cy="326" rx="185" ry="78" fill="url(#cloud-bright)" />
+      <ellipse cx="770" cy="430" rx="330" ry="76" fill="url(#cloud-shadow)" opacity="0.4" />
+    </g>
 
-  <g opacity="0.46">
-    <ellipse cx="2050" cy="535" rx="250" ry="86" fill="url(#cloud-white)" />
-    <ellipse cx="2380" cy="494" rx="390" ry="116" fill="url(#cloud-white)" />
-    <ellipse cx="2720" cy="532" rx="300" ry="92" fill="url(#cloud-white)" />
-  </g>
+    <g opacity="0.58">
+      <ellipse cx="1510" cy="548" rx="210" ry="84" fill="url(#cloud-white)" />
+      <ellipse cx="1695" cy="502" rx="275" ry="108" fill="url(#cloud-bright)" />
+      <ellipse cx="1910" cy="528" rx="290" ry="102" fill="url(#cloud-white)" />
+      <ellipse cx="2135" cy="560" rx="220" ry="82" fill="url(#cloud-white)" />
+      <ellipse cx="1810" cy="590" rx="390" ry="72" fill="url(#cloud-shadow)" opacity="0.36" />
+    </g>
 
-  <g opacity="0.32">
-    <ellipse cx="2890" cy="362" rx="190" ry="68" fill="url(#cloud-white)" />
-    <ellipse cx="3120" cy="330" rx="165" ry="62" fill="url(#cloud-white)" />
-  </g>
-
-  <g opacity="0.16">
-    <ellipse cx="1260" cy="430" rx="460" ry="60" fill="#f4f8ff" />
-    <ellipse cx="2510" cy="438" rx="520" ry="62" fill="#eef6ff" />
+    <g opacity="0.46">
+      <ellipse cx="2035" cy="358" rx="165" ry="68" fill="url(#cloud-white)" />
+      <ellipse cx="2210" cy="330" rx="145" ry="58" fill="url(#cloud-bright)" />
+      <ellipse cx="2335" cy="368" rx="138" ry="56" fill="url(#cloud-white)" />
+    </g>
   </g>
 </svg>
