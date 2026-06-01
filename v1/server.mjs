@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { extname, join, normalize, resolve } from "node:path";
 
-const root = resolve(import.meta.dirname);
+const root = resolve(import.meta.dirname, "..");
 const port = Number(process.env.PORT || 4173);
 
 const mimeTypes = {
@@ -19,6 +19,15 @@ function resolveRequestPath(url) {
   const pathname = decodeURIComponent(new URL(url, `http://localhost:${port}`).pathname);
   if (pathname === "/") {
     return resolve(join(root, "index.html"));
+  }
+  if (pathname === "/v1") {
+    return resolve(join(root, "v1", "index.html"));
+  }
+  if (pathname === "/admin") {
+    return resolve(join(root, "admin", "index.html"));
+  }
+  if (pathname.endsWith("/")) {
+    return resolve(join(root, pathname, "index.html"));
   }
 
   const safePath = normalize(pathname).replace(/^(\.\.[/\\])+/, "");
@@ -53,5 +62,6 @@ const server = createServer(async (request, response) => {
 });
 
 server.listen(port, "127.0.0.1", () => {
-  console.log(`V1 preview: http://127.0.0.1:${port}/`);
+  console.log(`Homepage preview: http://127.0.0.1:${port}/`);
+  console.log(`Admin preview: http://127.0.0.1:${port}/admin`);
 });

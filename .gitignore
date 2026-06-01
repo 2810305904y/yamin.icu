@@ -9,6 +9,7 @@ node_modules/
 # Local preview and browser artifacts
 v0/chrome-profile*/
 v1/server*.log
+v1/*.log
 v1/chrome-profile*/
 v0/_verification_*.png
 v1/_verification_*.png
@@ -21,4 +22,3 @@ out/
 # System files
 Thumbs.db
 .DS_Store
-

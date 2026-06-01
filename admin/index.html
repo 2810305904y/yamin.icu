@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>鸦珉.icu - 内容编辑台</title>
+    <link rel="stylesheet" href="/v1/styles.css" />
+    <link rel="stylesheet" href="/admin/styles.css" />
+    <script type="module" src="/admin/admin.mjs"></script>
+  </head>
+  <body class="admin-page">
+    <main class="admin-shell">
+      <header class="admin-topbar">
+        <div>
+          <p class="admin-kicker">V1.2</p>
+          <h1>内容编辑台</h1>
+        </div>
+        <div class="admin-actions" aria-label="全局操作">
+          <button type="button" data-action="save-draft">保存草稿</button>
+          <button type="button" data-action="download">下载数据文件</button>
+          <button type="button" class="ghost-button" data-action="reset-draft">恢复线上内容</button>
+        </div>
+      </header>
+
+      <section class="admin-status" data-status>草稿只保存在当前浏览器。正式写入线上内容之前，还需要接存储和登录。</section>
+
+      <section class="admin-workbench">
+        <aside class="admin-sidebar" aria-label="编辑分区">
+          <nav class="admin-tabs" data-tabs></nav>
+          <button type="button" class="add-button" data-action="add-item">新增一条</button>
+        </aside>
+
+        <section class="editor-panel" aria-label="内容编辑">
+          <div class="editor-list" data-editor-list></div>
+        </section>
+
+        <section class="preview-panel" aria-label="实时预览">
+          <div class="preview-frame">
+            <section class="preview-section">
+              <h2>项目区</h2>
+              <div class="projects-grid admin-preview-projects" data-preview-projects></div>
+            </section>
+            <section class="preview-section compact-preview">
+              <h2>正在进行 / 待办区</h2>
+              <div class="todo-list" data-preview-todos></div>
+            </section>
+            <section class="preview-section compact-preview">
+              <h2>奇怪念头区</h2>
+              <div class="admin-thought-preview" data-preview-thoughts></div>
+            </section>
+            <section class="preview-section compact-preview">
+              <h2>自媒体</h2>
+              <nav class="social-list" data-preview-channels></nav>
+            </section>
+          </div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>
