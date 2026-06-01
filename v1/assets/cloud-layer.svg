@@ -1,64 +1,90 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="2800" height="900" viewBox="0 0 2800 900">
+<svg xmlns="http://www.w3.org/2000/svg" width="3200" height="900" viewBox="0 0 3200 900">
   <defs>
     <linearGradient id="edge-fade-gradient" x1="0" x2="1" y1="0" y2="0">
       <stop offset="0" stop-color="#000000" stop-opacity="0" />
-      <stop offset="0.14" stop-color="#000000" stop-opacity="0" />
-      <stop offset="0.24" stop-color="#ffffff" stop-opacity="1" />
-      <stop offset="0.76" stop-color="#ffffff" stop-opacity="1" />
-      <stop offset="0.88" stop-color="#000000" stop-opacity="0" />
+      <stop offset="0.13" stop-color="#000000" stop-opacity="0" />
+      <stop offset="0.22" stop-color="#ffffff" stop-opacity="1" />
+      <stop offset="0.78" stop-color="#ffffff" stop-opacity="1" />
+      <stop offset="0.9" stop-color="#000000" stop-opacity="0" />
       <stop offset="1" stop-color="#000000" stop-opacity="0" />
     </linearGradient>
     <mask id="edge-fade">
-      <rect width="2800" height="900" fill="url(#edge-fade-gradient)" />
+      <rect width="3200" height="900" fill="url(#edge-fade-gradient)" />
     </mask>
-    <radialGradient id="cloud-white" cx="46%" cy="42%" r="66%">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.96" />
-      <stop offset="0.46" stop-color="#f7fbff" stop-opacity="0.72" />
-      <stop offset="0.72" stop-color="#e2eaf4" stop-opacity="0.28" />
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
+    <filter id="soften" x="-8%" y="-12%" width="116%" height="124%">
+      <feGaussianBlur stdDeviation="1.8" />
+    </filter>
+    <radialGradient id="cloud-lit" cx="42%" cy="24%" r="78%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="1" />
+      <stop offset="0.42" stop-color="#f7fbff" stop-opacity="0.92" />
+      <stop offset="0.7" stop-color="#dbe7f1" stop-opacity="0.58" />
+      <stop offset="1" stop-color="#b7cad9" stop-opacity="0.08" />
     </radialGradient>
-    <radialGradient id="cloud-bright" cx="43%" cy="38%" r="64%">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.92" />
-      <stop offset="0.55" stop-color="#ffffff" stop-opacity="0.58" />
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
-    </radialGradient>
-    <radialGradient id="cloud-shadow" cx="50%" cy="62%" r="74%">
-      <stop offset="0" stop-color="#7b8da3" stop-opacity="0.28" />
-      <stop offset="0.58" stop-color="#adbac9" stop-opacity="0.16" />
+    <linearGradient id="cloud-bottom" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.18" />
+      <stop offset="0.5" stop-color="#b9d0dd" stop-opacity="0.28" />
+      <stop offset="1" stop-color="#678199" stop-opacity="0.32" />
+    </linearGradient>
+    <radialGradient id="small-white" cx="45%" cy="35%" r="70%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95" />
+      <stop offset="0.6" stop-color="#f4faff" stop-opacity="0.78" />
       <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
     </radialGradient>
   </defs>
 
-  <rect width="2800" height="900" fill="none" />
+  <rect width="3200" height="900" fill="none" />
 
-  <g mask="url(#edge-fade)">
-    <g opacity="0.28">
-      <ellipse cx="720" cy="390" rx="430" ry="130" fill="url(#cloud-shadow)" />
-      <ellipse cx="1780" cy="520" rx="540" ry="128" fill="url(#cloud-shadow)" />
-      <ellipse cx="2160" cy="360" rx="310" ry="96" fill="url(#cloud-shadow)" />
+  <g mask="url(#edge-fade)" filter="url(#soften)">
+    <g opacity="0.9">
+      <path
+        d="M360 612 C305 603 278 566 305 532 C328 500 367 494 397 507 C418 456 468 427 524 439 C550 395 612 368 680 393 C719 345 808 330 878 375 C927 340 1002 350 1036 405 C1105 399 1166 437 1183 493 C1254 502 1307 552 1295 604 C1285 651 1225 678 1153 666 L430 666 C400 664 374 642 360 612 Z"
+        fill="url(#cloud-lit)"
+      />
+      <path
+        d="M405 584 C520 616 648 598 758 610 C895 625 1008 628 1170 593 C1240 578 1283 594 1295 613 C1282 654 1230 678 1155 666 L432 666 C394 663 366 638 358 608 C366 590 382 582 405 584 Z"
+        fill="url(#cloud-bottom)"
+        opacity="0.5"
+      />
+      <path
+        d="M380 540 C420 522 470 518 520 527 C604 542 670 522 728 498 C788 472 865 477 910 510 C977 491 1040 510 1074 556 C1118 545 1162 550 1196 575"
+        fill="none"
+        stroke="#ffffff"
+        stroke-linecap="round"
+        stroke-width="18"
+        opacity="0.28"
+      />
+      <ellipse cx="332" cy="640" rx="52" ry="20" fill="url(#small-white)" />
+      <ellipse cx="1335" cy="620" rx="45" ry="18" fill="url(#small-white)" />
+      <ellipse cx="1395" cy="588" rx="28" ry="12" fill="url(#small-white)" />
     </g>
 
-    <g opacity="0.78">
-      <ellipse cx="520" cy="388" rx="170" ry="82" fill="url(#cloud-white)" />
-      <ellipse cx="650" cy="334" rx="210" ry="104" fill="url(#cloud-bright)" />
-      <ellipse cx="835" cy="350" rx="260" ry="116" fill="url(#cloud-white)" />
-      <ellipse cx="1038" cy="390" rx="210" ry="92" fill="url(#cloud-white)" />
-      <ellipse cx="1190" cy="326" rx="185" ry="78" fill="url(#cloud-bright)" />
-      <ellipse cx="770" cy="430" rx="330" ry="76" fill="url(#cloud-shadow)" opacity="0.4" />
+    <g opacity="0.82">
+      <path
+        d="M1755 650 C1698 644 1668 608 1694 575 C1717 546 1758 540 1786 552 C1815 501 1874 477 1938 496 C1981 452 2064 446 2119 489 C2164 466 2230 476 2266 522 C2332 522 2387 561 2395 616 C2468 620 2526 664 2515 714 C2504 764 2442 790 2368 778 L1812 778 C1775 777 1743 691 1755 650 Z"
+        fill="url(#cloud-lit)"
+      />
+      <path
+        d="M1780 655 C1895 693 2030 680 2138 695 C2255 713 2375 704 2488 666 C2525 696 2508 756 2370 778 L1812 778 C1768 776 1738 728 1755 675 C1762 662 1770 656 1780 655 Z"
+        fill="url(#cloud-bottom)"
+        opacity="0.5"
+      />
+      <ellipse cx="1645" cy="696" rx="48" ry="18" fill="url(#small-white)" />
+      <ellipse cx="2588" cy="692" rx="54" ry="20" fill="url(#small-white)" />
+      <ellipse cx="2665" cy="650" rx="30" ry="12" fill="url(#small-white)" />
     </g>
 
-    <g opacity="0.58">
-      <ellipse cx="1510" cy="548" rx="210" ry="84" fill="url(#cloud-white)" />
-      <ellipse cx="1695" cy="502" rx="275" ry="108" fill="url(#cloud-bright)" />
-      <ellipse cx="1910" cy="528" rx="290" ry="102" fill="url(#cloud-white)" />
-      <ellipse cx="2135" cy="560" rx="220" ry="82" fill="url(#cloud-white)" />
-      <ellipse cx="1810" cy="590" rx="390" ry="72" fill="url(#cloud-shadow)" opacity="0.36" />
-    </g>
-
-    <g opacity="0.46">
-      <ellipse cx="2035" cy="358" rx="165" ry="68" fill="url(#cloud-white)" />
-      <ellipse cx="2210" cy="330" rx="145" ry="58" fill="url(#cloud-bright)" />
-      <ellipse cx="2335" cy="368" rx="138" ry="56" fill="url(#cloud-white)" />
+    <g opacity="0.6">
+      <path
+        d="M1498 406 C1460 400 1445 376 1462 354 C1478 334 1506 331 1526 339 C1543 307 1588 296 1625 319 C1655 300 1705 306 1725 340 C1768 338 1804 364 1807 400 C1847 408 1870 435 1860 462 C1849 492 1808 502 1762 494 L1532 494 C1500 492 1480 463 1490 435 C1492 423 1494 414 1498 406 Z"
+        fill="url(#cloud-lit)"
+      />
+      <path
+        d="M1510 430 C1585 456 1680 444 1760 426 C1818 412 1850 430 1860 456 C1847 487 1810 502 1763 494 L1530 494 C1498 492 1482 466 1490 440 C1495 432 1500 429 1510 430 Z"
+        fill="url(#cloud-bottom)"
+        opacity="0.32"
+      />
+      <ellipse cx="1905" cy="430" rx="40" ry="14" fill="url(#small-white)" />
+      <ellipse cx="1970" cy="405" rx="24" ry="10" fill="url(#small-white)" />
     </g>
   </g>
 </svg>

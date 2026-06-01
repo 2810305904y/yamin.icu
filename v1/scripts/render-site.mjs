@@ -186,7 +186,279 @@ export function applyBackgroundLabMode(search = window.location.search) {
   document.body.classList.toggle("background-lab", params.has("bg"));
 }
 
+function createCloudTexture() {
+  const texture = document.createElement("canvas");
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+  const width = 5600;
+  const height = 900;
+  texture.width = Math.round(width * dpr);
+  texture.height = Math.round(height * dpr);
+
+  const context = texture.getContext("2d");
+  context.scale(dpr, dpr);
+  context.clearRect(0, 0, width, height);
+
+  function cloudGradient(x, y, radius, stops) {
+    const gradient = context.createRadialGradient(x, y, 0, x, y, radius);
+    stops.forEach(([offset, color]) => gradient.addColorStop(offset, color));
+    return gradient;
+  }
+
+  function drawLobe(x, y, rx, ry, fill, alpha = 1) {
+    context.save();
+    context.globalAlpha = alpha;
+    context.beginPath();
+    context.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+    context.fillStyle = fill;
+    context.fill();
+    context.restore();
+  }
+
+  function createRandom(seed) {
+    return () => {
+      seed |= 0;
+      seed = (seed + 0x6d2b79f5) | 0;
+      let value = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      value = (value + Math.imul(value ^ (value >>> 7), 61 | value)) ^ value;
+      return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function randomBetween(random, min, max) {
+    return min + (max - min) * random();
+  }
+
+  function pickLobe(random, lobes) {
+    return lobes[Math.floor(random() * lobes.length)];
+  }
+
+  function drawCloud(cx, cy, scale, alpha, lobes) {
+    const random = createRandom(Math.floor(cx * 13 + cy * 17 + scale * 1000));
+
+    context.save();
+    context.globalAlpha = alpha;
+
+    context.filter = `blur(${8 * scale}px)`;
+    lobes.forEach(([x, y, rx, ry]) => {
+      drawLobe(
+        cx + x * scale,
+        cy + (y + ry * 0.5) * scale,
+        rx * scale * 1.22,
+        ry * scale * 0.86,
+        cloudGradient(cx + x * scale, cy + (y + ry * 0.65) * scale, Math.max(rx, ry) * scale * 1.75, [
+          [0, "rgba(68, 94, 122, 0.15)"],
+          [0.52, "rgba(116, 148, 172, 0.09)"],
+          [1, "rgba(255, 255, 255, 0)"],
+        ]),
+        0.44,
+      );
+    });
+
+    context.filter = `blur(${6.5 * scale}px)`;
+    const sortedLobes = [...lobes].sort((a, b) => a[0] - b[0]);
+    sortedLobes.slice(0, -1).forEach((lobe, index) => {
+      const next = sortedLobes[index + 1];
+      const x = (lobe[0] + next[0]) / 2;
+      const y = (lobe[1] + next[1]) / 2;
+      const distance = Math.abs(next[0] - lobe[0]);
+      const rx = Math.max(distance * 0.72, (lobe[2] + next[2]) * 0.38);
+      const ry = Math.max(lobe[3], next[3]) * 0.72;
+      drawLobe(
+        cx + x * scale,
+        cy + y * scale,
+        rx * scale,
+        ry * scale,
+        cloudGradient(cx + x * scale, cy + (y - ry * 0.28) * scale, Math.max(rx, ry) * scale * 1.25, [
+          [0, "rgba(255, 255, 255, 0.94)"],
+          [0.48, "rgba(246, 251, 255, 0.78)"],
+          [0.78, "rgba(204, 222, 234, 0.28)"],
+          [1, "rgba(255, 255, 255, 0)"],
+        ]),
+        0.66,
+      );
+    });
+
+    context.filter = `blur(${3.5 * scale}px)`;
+    lobes.forEach(([x, y, rx, ry]) => {
+      drawLobe(
+        cx + x * scale,
+        cy + y * scale,
+        rx * scale * 1.05,
+        ry * scale * 0.95,
+        cloudGradient(cx + x * scale, cy + (y - ry * 0.42) * scale, Math.max(rx, ry) * scale * 1.12, [
+          [0, "rgba(255, 255, 255, 0.98)"],
+          [0.5, "rgba(255, 255, 255, 0.8)"],
+          [0.82, "rgba(221, 234, 243, 0.24)"],
+          [1, "rgba(255, 255, 255, 0)"],
+        ]),
+        0.72,
+      );
+    });
+
+    context.filter = `blur(${2.1 * scale}px)`;
+    for (let i = 0; i < lobes.length * 7; i += 1) {
+      const [x, y, rx, ry] = pickLobe(random, lobes);
+      const angle = randomBetween(random, -Math.PI * 0.9, Math.PI * 0.18);
+      const edgeX = Math.cos(angle) * rx * randomBetween(random, 0.72, 1.1);
+      const edgeY = Math.sin(angle) * ry * randomBetween(random, 0.68, 1.12);
+      const px = cx + (x + edgeX + randomBetween(random, -18, 18)) * scale;
+      const py = cy + (y + edgeY + randomBetween(random, -12, 12)) * scale;
+      const radius = randomBetween(random, 7, 28) * scale;
+      drawLobe(
+        px,
+        py,
+        radius * randomBetween(random, 0.9, 2.4),
+        radius * randomBetween(random, 0.34, 0.86),
+        cloudGradient(px, py, radius * 1.4, [
+          [0, "rgba(255, 255, 255, 0.58)"],
+          [0.5, "rgba(241, 248, 255, 0.28)"],
+          [1, "rgba(255, 255, 255, 0)"],
+        ]),
+        randomBetween(random, 0.2, 0.48),
+      );
+    }
+
+    context.filter = "none";
+    context.restore();
+  }
+
+  const leftCloud = [
+    [-260, 54, 92, 48],
+    [-180, 6, 118, 72],
+    [-70, -28, 150, 86],
+    [80, -12, 170, 90],
+    [218, 34, 142, 66],
+    [345, 68, 98, 42],
+    [-5, 80, 210, 54],
+    [182, 92, 178, 48],
+    [-330, 104, 54, 24],
+    [428, 108, 48, 18],
+  ];
+
+  const rightCloud = [
+    [-230, 42, 90, 42],
+    [-130, -2, 132, 66],
+    [18, -42, 166, 88],
+    [178, -2, 164, 74],
+    [320, 48, 122, 48],
+    [-12, 72, 220, 52],
+    [216, 94, 190, 44],
+    [-330, 92, 48, 18],
+    [438, 94, 52, 18],
+  ];
+
+  const smallCloud = [
+    [-70, 8, 52, 22],
+    [-20, -10, 68, 30],
+    [55, 0, 58, 24],
+    [110, 16, 36, 14],
+  ];
+
+  const wideCloud = [
+    [-360, 62, 94, 34],
+    [-246, 20, 138, 58],
+    [-108, -16, 172, 72],
+    [58, -30, 190, 82],
+    [226, 8, 172, 68],
+    [380, 44, 130, 44],
+    [-20, 78, 250, 48],
+    [250, 92, 220, 38],
+    [520, 92, 72, 20],
+  ];
+
+  const airyCloud = [
+    [-170, 20, 70, 22],
+    [-84, -8, 102, 36],
+    [30, -18, 122, 42],
+    [154, 12, 94, 26],
+    [254, 28, 44, 14],
+  ];
+
+  const lowerCloud = [
+    [-300, 76, 84, 30],
+    [-190, 34, 126, 50],
+    [-52, -8, 150, 66],
+    [96, -20, 166, 72],
+    [238, 20, 142, 56],
+    [378, 58, 104, 36],
+    [-18, 80, 214, 42],
+    [218, 96, 196, 34],
+  ];
+
+  drawCloud(780, 520, 1.08, 0.74, leftCloud);
+  drawCloud(1240, 680, 0.52, 0.28, smallCloud);
+  drawCloud(1660, 360, 0.74, 0.4, airyCloud);
+  drawCloud(1980, 500, 0.5, 0.24, smallCloud);
+  drawCloud(2260, 600, 0.92, 0.5, lowerCloud);
+  drawCloud(2840, 300, 0.46, 0.22, airyCloud);
+  drawCloud(3280, 440, 0.76, 0.42, wideCloud);
+  drawCloud(3860, 680, 0.52, 0.26, smallCloud);
+  drawCloud(4360, 620, 0.82, 0.48, lowerCloud);
+  drawCloud(5000, 340, 0.58, 0.32, smallCloud);
+
+  texture.dataset.cssWidth = String(width);
+  texture.dataset.cssHeight = String(height);
+  return texture;
+}
+
+export function initCloudCanvasBackground() {
+  if (!document.body || document.querySelector(".cloud-canvas")) return;
+
+  const canvas = document.createElement("canvas");
+  canvas.className = "cloud-canvas";
+  canvas.setAttribute("aria-hidden", "true");
+  document.body.prepend(canvas);
+
+  const context = canvas.getContext("2d");
+  const texture = createCloudTexture();
+  const textureWidth = Number(texture.dataset.cssWidth);
+  const textureHeight = Number(texture.dataset.cssHeight);
+  const motionAllowed = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let frameId = 0;
+
+  function draw(time = 0) {
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const scale = height / textureHeight;
+    const tileWidth = textureWidth * scale;
+    const speed = motionAllowed ? 0.012 : 0;
+    const offset = -((time * speed + 420) % tileWidth);
+
+    if (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr)) {
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+    }
+
+    context.setTransform(dpr, 0, 0, dpr, 0, 0);
+    context.clearRect(0, 0, width, height);
+
+    for (let x = offset - tileWidth; x < width + tileWidth; x += tileWidth) {
+      context.drawImage(texture, x, 0, tileWidth, height);
+    }
+
+    if (motionAllowed) {
+      frameId = window.requestAnimationFrame(draw);
+    }
+  }
+
+  document.body.classList.add("canvas-clouds-ready");
+  draw();
+
+  window.addEventListener("resize", () => draw(), { passive: true });
+  if (motionAllowed) {
+    frameId = window.requestAnimationFrame(draw);
+  }
+
+  return () => {
+    if (frameId) window.cancelAnimationFrame(frameId);
+    canvas.remove();
+    document.body.classList.remove("canvas-clouds-ready");
+  };
+}
+
 if (typeof document !== "undefined") {
   applyBackgroundLabMode();
+  initCloudCanvasBackground();
   mountSite(siteData);
 }

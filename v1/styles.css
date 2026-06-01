@@ -52,11 +52,11 @@ body::after {
 body::before {
   background-image: url("./assets/cloud-layer.svg");
   background-repeat: repeat-x;
-  background-size: 2800px 900px;
-  background-position: -420px 50%;
-  filter: saturate(0.96) blur(0.6px);
-  opacity: 0.72;
-  animation: cloud-image-drift-left 96s linear infinite;
+  background-size: 3200px 900px;
+  background-position: -520px 50%;
+  filter: saturate(1.04);
+  opacity: 0.88;
+  animation: cloud-image-drift-left 118s linear infinite;
 }
 
 body::after {
@@ -67,6 +67,21 @@ body::after {
   background-size: 100% 100%, 100% 100%;
   background-position: 0 0;
   opacity: 1;
+}
+
+.cloud-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  opacity: 0.92;
+}
+
+.canvas-clouds-ready::before {
+  opacity: 0;
+  animation: none;
 }
 
 .page {
@@ -702,10 +717,10 @@ svg {
 
 @keyframes cloud-image-drift-left {
   0% {
-    background-position: -420px 50%;
+    background-position: -520px 50%;
   }
   100% {
-    background-position: -3220px 50%;
+    background-position: -3720px 50%;
   }
 }
 
