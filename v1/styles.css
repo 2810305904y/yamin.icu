@@ -37,7 +37,7 @@ body {
     sans-serif;
   background:
     radial-gradient(circle at 82% 10%, rgba(37, 99, 235, 0.16), transparent 28%),
-    linear-gradient(180deg, #3296dc 0%, #8bc8ef 35%, #e4f3ff 76%, #f8fbff 100%);
+    linear-gradient(180deg, #3296dc 0%, #92cef2 30%, #e8f6ff 58%, #9bd3f4 100%);
 }
 
 body::before,
@@ -52,23 +52,21 @@ body::after {
 body::before {
   background-image: url("./assets/cloud-layer.svg");
   background-repeat: repeat-x;
-  background-size: 1600px 900px;
+  background-size: 3600px 900px;
   background-position: 0 50%;
   filter: saturate(0.96) blur(0.6px);
-  opacity: 0.86;
-  animation: cloud-image-drift-left 48s linear infinite;
+  opacity: 0.66;
+  animation: cloud-image-drift-left 112s linear infinite;
 }
 
 body::after {
   background-image:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 34%, rgba(255, 255, 255, 0.28)),
-    url("./assets/cloud-layer.svg");
-  background-repeat: repeat-x;
-  background-size: 100% 100%, 2200px 1150px;
-  background-position: 0 0, 520px 44%;
-  filter: blur(6px) saturate(0.86);
-  opacity: 0.44;
-  animation: cloud-image-drift-left-soft 84s linear infinite;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 34%, rgba(255, 255, 255, 0.14)),
+    radial-gradient(circle at 76% 44%, rgba(255, 255, 255, 0.18), transparent 28%);
+  background-repeat: no-repeat;
+  background-size: 100% 100%, 100% 100%;
+  background-position: 0 0;
+  opacity: 1;
 }
 
 .page {
@@ -691,16 +689,7 @@ svg {
     background-position: 0 50%;
   }
   100% {
-    background-position: -1600px 50%;
-  }
-}
-
-@keyframes cloud-image-drift-left-soft {
-  0% {
-    background-position: 0 0, 520px 44%;
-  }
-  100% {
-    background-position: 0 0, -1680px 44%;
+    background-position: -3600px 50%;
   }
 }
 

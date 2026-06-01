@@ -51,6 +51,8 @@ test("homepage cloud layer sits below the translucent map frame", async () => {
   assert.match(siteStyles, /body::before/);
   assert.match(siteStyles, /url\("\.\/assets\/cloud-layer\.svg"\)/);
   assert.match(siteStyles, /cloud-image-drift-left/);
+  assert.match(siteStyles, /background-size:\s*3600px 900px/);
+  assert.match(siteStyles, /background-repeat:\s*repeat-x/);
   assert.match(siteStyles, /\.page\s*{[^}]*z-index:\s*1/s);
   assert.match(siteStyles, /\.map-frame\s*{[^}]*rgba\(244, 250, 255, 0\.2\)/s);
   assert.doesNotMatch(siteStyles, /\.map-frame::after/);
