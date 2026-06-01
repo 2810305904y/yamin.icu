@@ -510,6 +510,14 @@ svg {
   background: #8b5cf6;
 }
 
+.todo-pink {
+  background: #ec4899;
+}
+
+.todo-red {
+  background: #ef4444;
+}
+
 .todo-text {
   min-width: 0;
   font-size: clamp(14px, 1vw, 18px);

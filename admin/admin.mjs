@@ -174,7 +174,6 @@ function fieldMarkup(item, section) {
   if (section === "thoughts") {
     return `
       ${textInput("念头", "text", item.text)}
-      ${selectInput("颜色", "tone", item.tone, toneOptions)}
     `;
   }
 
@@ -272,6 +271,9 @@ function renderEditor() {
 }
 
 function renderPreview() {
+  document.querySelectorAll("[data-preview-section]").forEach((section) => {
+    section.style.order = section.dataset.previewSection === activeSection ? "-1" : "0";
+  });
   document.querySelector("[data-preview-projects]").innerHTML = renderProjects(state.projects);
   document.querySelector("[data-preview-todos]").innerHTML = renderTodos(state.todos);
   document.querySelector("[data-preview-thoughts]").innerHTML = renderThoughts(state.thoughts);
