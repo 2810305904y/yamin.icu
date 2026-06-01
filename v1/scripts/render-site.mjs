@@ -75,12 +75,12 @@ function renderLargeProject(project, index) {
       <span class="card-index">${String(index).padStart(2, "0")}</span>
       ${renderIcon(project.icon, "project-illustration")}
       <span class="project-name">${escapeHtml(project.title)}</span>
-      ${renderStatus(project)}
       <span class="project-copy">${escapeHtml(project.description)}</span>
       <span class="project-link">
         <span>${escapeHtml(project.urlLabel || "暂时没有门牌号")}</span>
         <span aria-hidden="true">›</span>
       </span>
+      ${renderStatus(project)}
     </a>
   `;
 }
@@ -94,8 +94,8 @@ function renderWideProject(project, index) {
       ${renderIcon(project.icon, "wide-icon")}
       <span class="wide-content">
         <span class="project-name">${escapeHtml(project.title)}</span>
-        ${renderStatus(project)}
         <span class="project-copy">${escapeHtml(project.description)}</span>
+        ${renderStatus(project)}
       </span>
       <span class="round-arrow" aria-hidden="true">›</span>
     </a>
@@ -184,4 +184,3 @@ export function mountSite(data = siteData) {
 if (typeof document !== "undefined") {
   mountSite(siteData);
 }
-

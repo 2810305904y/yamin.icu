@@ -239,9 +239,11 @@ svg {
 .project-card-large {
   grid-row: span 3;
   display: grid;
-  grid-template-rows: auto minmax(104px, 0.9fr) auto auto auto;
+  grid-template-rows: auto auto auto auto auto;
+  align-content: center;
   align-items: center;
   justify-items: center;
+  gap: clamp(12px, 1.6vh, 22px);
   padding: clamp(19px, 2vw, 34px);
   text-align: center;
 }
@@ -272,6 +274,7 @@ svg {
 
 .project-illustration {
   width: clamp(80px, 7.2vw, 120px);
+  margin-bottom: clamp(4px, 0.7vh, 10px);
   color: var(--blue-500);
   filter: drop-shadow(1px 2px 2px rgba(37, 99, 235, 0.12));
 }
@@ -323,6 +326,10 @@ svg {
   font-weight: 800;
 }
 
+.project-card-large .status {
+  margin-top: clamp(1px, 0.35vh, 5px);
+}
+
 .status-live {
   color: #15803d;
   background: rgba(187, 247, 208, 0.76);
@@ -349,7 +356,7 @@ svg {
   justify-content: space-between;
   width: min(100%, 360px);
   min-height: 46px;
-  margin-top: auto;
+  margin-top: clamp(4px, 0.8vh, 10px);
   padding: 0 20px;
   border: 1.5px solid rgba(59, 130, 246, 0.46);
   border-radius: 999px;

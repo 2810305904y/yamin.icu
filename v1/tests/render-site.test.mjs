@@ -38,8 +38,10 @@ test("renderers output the visible homepage content", () => {
   const channelHtml = renderChannels(siteData.channels);
 
   assert.match(projectHtml, /睡前剩几杯/);
+  assert.match(projectHtml, /11点睡觉时，体内还剩几杯咖啡？/);
   assert.match(projectHtml, /coffeesleep\.cn/);
   assert.match(projectHtml, /破茧/);
+  assert.match(projectHtml, /每天 3 分钟，看见算法之外的世界。/);
   assert.match(todoHtml, /整理 V1/);
   assert.match(thoughtHtml, /不是公司官网/);
   assert.match(channelHtml, /YouTube/);
@@ -61,4 +63,22 @@ test("channels put bilibili first and include its public link", () => {
   assert.match(channelHtml, /https:\/\/space\.bilibili\.com\/15068209/);
   assert.match(channelHtml, /https:\/\/www\.youtube\.com\/@yamin-vio1in/);
   assert.match(channelHtml, /https:\/\/space\.bilibili\.com\/3493267880544550/);
+});
+
+test("project status chips render after descriptions", () => {
+  const projectHtml = renderProjects(siteData.projects);
+  const coffeeDescription = projectHtml.indexOf("11点睡觉时，体内还剩几杯咖啡？");
+  const coffeeLink = projectHtml.indexOf("<span>coffeesleep.cn</span>");
+  const coffeeStatus = projectHtml.indexOf("已上线");
+  const roughCutDescription = projectHtml.indexOf("快速粗剪，节省时间。");
+  const roughCutStatus = projectHtml.indexOf("计划中");
+
+  assert.ok(coffeeDescription > -1);
+  assert.ok(coffeeLink > -1);
+  assert.ok(coffeeStatus > -1);
+  assert.ok(coffeeDescription < coffeeLink);
+  assert.ok(coffeeLink < coffeeStatus);
+  assert.ok(roughCutDescription > -1);
+  assert.ok(roughCutStatus > -1);
+  assert.ok(roughCutDescription < roughCutStatus);
 });
