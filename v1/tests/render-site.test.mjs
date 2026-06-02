@@ -17,6 +17,7 @@ import {
   renderThoughts,
   renderTodos,
   resolveThoughtCollision,
+  shouldUseCanvasClouds,
   stepThoughtPhysics,
 } from "../scripts/render-site.mjs";
 
@@ -106,7 +107,8 @@ test("renderers output the visible homepage content", () => {
   assert.match(projectHtml, /破茧/);
   assert.match(projectHtml, /每天 3 分钟，看见算法之外的世界。/);
   assert.match(todoHtml, /视频粗剪工具/);
-  assert.match(thoughtHtml, /不是公司官网/);
+  assert.match(thoughtHtml, /被选择的成本/);
+  assert.match(thoughtHtml, /AI革命/);
   assert.match(channelHtml, /YouTube/);
 });
 
@@ -137,20 +139,30 @@ test("thought colors are automatically balanced instead of following stored tone
   assert.equal((thoughtHtml.match(/pill-blue/g) || []).length, 1);
 });
 
-test("thought space starts with a small floating visible set", () => {
+test("thought space starts with a lively floating visible set", () => {
+  const elevenRange = createThoughtVisibilityRange(11);
   const eightRange = createThoughtVisibilityRange(8);
   const sixRange = createThoughtVisibilityRange(6);
   const fourRange = createThoughtVisibilityRange(4);
-  const initialFlags = createInitialThoughtActiveFlags(8, createSeededRandom(23));
+  const initialFlags = createInitialThoughtActiveFlags(11, createSeededRandom(23));
   const initialVisibleCount = initialFlags.filter(Boolean).length;
 
-  assert.deepEqual(eightRange, { min: 5, max: 6 });
-  assert.deepEqual(sixRange, { min: 5, max: 6 });
+  assert.deepEqual(elevenRange, { min: 7, max: 8 });
+  assert.deepEqual(eightRange, { min: 7, max: 8 });
+  assert.deepEqual(sixRange, { min: 6, max: 6 });
   assert.deepEqual(fourRange, { min: 4, max: 4 });
-  assert.ok(initialVisibleCount >= 5);
-  assert.ok(initialVisibleCount <= 6);
-  assert.equal(initialFlags.length, 8);
+  assert.ok(initialVisibleCount >= 7);
+  assert.ok(initialVisibleCount <= 8);
+  assert.equal(initialFlags.length, 11);
   assert.equal(initialFlags.every(Boolean), false);
+  assert.ok(siteData.thoughts.length >= 8);
+});
+
+test("cloud canvas stays off on mobile-sized or constrained devices", () => {
+  assert.equal(shouldUseCanvasClouds({ width: 1366, deviceMemory: 8, saveData: false }), true);
+  assert.equal(shouldUseCanvasClouds({ width: 720, deviceMemory: 8, saveData: false }), false);
+  assert.equal(shouldUseCanvasClouds({ width: 1366, deviceMemory: 2, saveData: false }), false);
+  assert.equal(shouldUseCanvasClouds({ width: 1366, deviceMemory: 8, saveData: true }), false);
 });
 
 test("thought collision physics separates active labels", () => {
@@ -219,7 +231,7 @@ test("project status chips render after descriptions", () => {
   const projectHtml = renderProjects(siteData.projects);
   const coffeeDescription = projectHtml.indexOf("11点睡觉时，体内还剩几杯咖啡？");
   const coffeeLink = projectHtml.indexOf("<span>coffeesleep.cn</span>");
-  const coffeeStatus = projectHtml.indexOf("已上线");
+  const coffeeStatus = projectHtml.indexOf("已上线", coffeeLink);
   const placeholderDescription = projectHtml.indexOf("这里先留给下一个冒出来的东西。");
   const placeholderStatus = projectHtml.indexOf("空位");
 
@@ -279,6 +291,7 @@ test("todo tones support expanded color options", async () => {
 
 test("root homepage renders directly and keeps a legacy module fallback", async () => {
   const rootHtml = await readFile("index.html", "utf8");
+  const v1Html = await readFile("v1/index.html", "utf8");
 
   assert.doesNotMatch(rootHtml, /http-equiv="refresh"/i);
   assert.doesNotMatch(rootHtml, /url=\/v1/i);
@@ -287,5 +300,10 @@ test("root homepage renders directly and keeps a legacy module fallback", async 
   assert.match(rootHtml, /src="\/v1\/scripts\/render-site\.mjs(?:\?[^"]+)?"/);
   assert.match(rootHtml, /<script nomodule>/);
   assert.match(rootHtml, /window\.location\.replace\("\/v1\/"\)/);
+  assert.match(rootHtml, /data-module-fallback/);
+  assert.match(rootHtml, /window\.setTimeout\(function \(\)/);
   assert.match(rootHtml, /data-projects/);
+  assert.match(v1Html, /thought-pill pill-green is-visible/);
+  assert.match(v1Html, /data-thought-pill/);
+  assert.match(v1Html, /AI革命/);
 });

@@ -6,10 +6,18 @@
     <title>鸦珉.icu - 项目地图</title>
     <meta name="description" content="一张不太正经的项目地图。" />
     <link rel="canonical" href="/" />
-    <link rel="stylesheet" href="/v1/styles.css?v=1.3.10-social-width" />
-    <script type="module" src="/v1/scripts/render-site.mjs?v=1.3.10-social-width"></script>
+    <link rel="stylesheet" href="/v1/styles.css?v=1.3.11-mobile-fallback-thoughts" />
+    <script type="module" src="/v1/scripts/render-site.mjs?v=1.3.11-mobile-fallback-thoughts"></script>
     <script nomodule>
       window.location.replace("/v1/");
+    </script>
+    <script data-module-fallback>
+      window.setTimeout(function () {
+        var projects = document.querySelector("[data-projects]");
+        if (projects && !projects.children.length) {
+          window.location.replace("/v1/");
+        }
+      }, 1800);
     </script>
     <script>
       window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };

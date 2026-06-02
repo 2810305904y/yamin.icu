@@ -115,12 +115,12 @@ test("project cards keep a slightly slimmer desktop footprint", async () => {
 
   assert.match(siteStyles, /grid-template-columns:\s*minmax\(200px,\s*0\.94fr\)\s*minmax\(200px,\s*0\.94fr\)\s*minmax\(300px,\s*1\.4fr\)/);
   assert.doesNotMatch(siteStyles, /grid-template-columns:\s*minmax\(210px,\s*1fr\)\s*minmax\(210px,\s*1fr\)\s*minmax\(280px,\s*1\.28fr\)/);
-  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.3\.10-social-width/);
-  assert.match(rootHtml, /\/v1\/scripts\/render-site\.mjs\?v=1\.3\.10-social-width/);
+  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.3\.11-mobile-fallback-thoughts/);
+  assert.match(rootHtml, /\/v1\/scripts\/render-site\.mjs\?v=1\.3\.11-mobile-fallback-thoughts/);
   assert.match(rootHtml, /<script nomodule>/);
   assert.match(rootHtml, /window\.location\.replace\("\/v1\/"\)/);
-  assert.match(v1Html, /\.\/styles\.css\?v=1\.3\.10-social-width/);
-  assert.match(v1Html, /\.\/scripts\/render-site\.mjs\?v=1\.3\.10-social-width/);
+  assert.match(v1Html, /\.\/styles\.css\?v=1\.3\.11-mobile-fallback-thoughts/);
+  assert.match(v1Html, /\.\/scripts\/render-site\.mjs\?v=1\.3\.11-mobile-fallback-thoughts/);
 });
 
 test("version naming uses the new three-part small release format", async () => {
@@ -129,8 +129,8 @@ test("version naming uses the new three-part small release format", async () => 
   const namingRules = await readFile("项目进度/2026-06-01_版本命名规则.md", "utf8");
 
   assert.match(readme, /当前阶段：V1\.3/);
-  assert.match(readme, /当前小版本：V1\.3\.10/);
-  assert.match(adminHtml, /<p class="admin-kicker">V1\.3\.10<\/p>/);
+  assert.match(readme, /当前小版本：V1\.3\.11/);
+  assert.match(adminHtml, /<p class="admin-kicker">V1\.3\.11<\/p>/);
   assert.match(namingRules, /V1\.3\.10\s*->\s*V1\.3 阶段内的第 10 次小更新/);
   assert.match(namingRules, /三段式/);
 });
@@ -166,8 +166,10 @@ test("thought area is prepared as a bounded motion space", async () => {
   assert.match(siteStyles, /\.thought-space \.thought-pill\s*{[^}]*will-change:\s*transform,\s*opacity/s);
   assert.match(siteStyles, /\.thought-space \.thought-pill\s*{[^}]*opacity\s*720ms\s*ease/s);
   assert.match(script, /function toggleThoughtVisibility/);
-  assert.match(script, /THOUGHT_MIN_VISIBLE\s*=\s*5/);
-  assert.match(script, /THOUGHT_MAX_VISIBLE\s*=\s*6/);
+  assert.match(script, /THOUGHT_MIN_VISIBLE\s*=\s*7/);
+  assert.match(script, /THOUGHT_MAX_VISIBLE\s*=\s*8/);
+  assert.match(script, /function readCloudRuntimeOptions/);
+  assert.match(script, /shouldUseCanvasClouds/);
   assert.match(script, /THOUGHT_BOUND_PADDING\s*=\s*40/);
   assert.match(script, /Math\.min\(THOUGHT_BOUND_PADDING,\s*Math\.max\(0,\s*\(axisSize - itemSize\) \/ 2\)\)/);
   assert.ok(script.indexOf("mountLiveSite();") < script.indexOf("initCloudCanvasBackground();"));

@@ -38,8 +38,8 @@ const iconMap = {
 
 const thoughtSpaceCleanups = new WeakMap();
 const THOUGHT_BOUND_PADDING = 40;
-const THOUGHT_MIN_VISIBLE = 5;
-const THOUGHT_MAX_VISIBLE = 6;
+const THOUGHT_MIN_VISIBLE = 7;
+const THOUGHT_MAX_VISIBLE = 8;
 const THOUGHT_MIN_TOGGLE_DELAY = 4200;
 const THOUGHT_MAX_TOGGLE_DELAY = 6800;
 const thoughtTonePalette = ["green", "orange", "purple", "pink", "red", "yellow", "cyan", "blue"];
@@ -564,6 +564,26 @@ export async function mountLiveSite() {
   mountSite(await loadLiveSiteData());
 }
 
+function readCloudRuntimeOptions() {
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection || {};
+  return {
+    width: window.innerWidth,
+    deviceMemory: navigator.deviceMemory,
+    saveData: connection.saveData === true,
+  };
+}
+
+export function shouldUseCanvasClouds(options = {}) {
+  const width = Math.max(0, Number(options.width || 0));
+  const memory = options.deviceMemory == null ? null : Number(options.deviceMemory);
+
+  if (options.saveData === true) return false;
+  if (width && width <= 1100) return false;
+  if (memory && memory < 4) return false;
+
+  return true;
+}
+
 export function applyBackgroundLabMode(search = window.location.search) {
   const params = new URLSearchParams(search);
   document.body.classList.toggle("background-lab", params.has("bg"));
@@ -744,6 +764,7 @@ function createCloudTexture() {
 
 export function initCloudCanvasBackground() {
   if (!document.body || document.querySelector(".cloud-canvas")) return;
+  if (!shouldUseCanvasClouds(readCloudRuntimeOptions())) return;
 
   const canvas = document.createElement("canvas");
   canvas.className = "cloud-canvas";
