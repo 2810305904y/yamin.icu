@@ -218,6 +218,8 @@ test("todo tones support expanded color options", async () => {
   assert.match(styles, /\.todo-red\s*{[^}]*#ff0000/s);
   assert.match(styles, /\.todo-black/);
   assert.match(styles, /\.todo-white/);
+  assert.match(styles, /\.todo-tone-white \.todo-track\s*{[^}]*rgba\(255,\s*255,\s*255,\s*0\.62\)/s);
+  assert.match(styles, /\.todo-tone-white \.todo-track span\s*{[^}]*background:\s*#ffffff/s);
   assert.match(script, /"black", "white"/);
 });
 

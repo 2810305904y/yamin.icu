@@ -108,10 +108,10 @@ test("project cards keep a slightly slimmer desktop footprint", async () => {
 
   assert.match(siteStyles, /grid-template-columns:\s*minmax\(200px,\s*0\.94fr\)\s*minmax\(200px,\s*0\.94fr\)\s*minmax\(300px,\s*1\.4fr\)/);
   assert.doesNotMatch(siteStyles, /grid-template-columns:\s*minmax\(210px,\s*1fr\)\s*minmax\(210px,\s*1fr\)\s*minmax\(280px,\s*1\.28fr\)/);
-  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.30-thought-space/);
-  assert.match(rootHtml, /\/v1\/scripts\/render-site\.mjs\?v=1\.30-thought-space/);
-  assert.match(v1Html, /\.\/styles\.css\?v=1\.30-thought-space/);
-  assert.match(v1Html, /\.\/scripts\/render-site\.mjs\?v=1\.30-thought-space/);
+  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.31-white-todo-progress/);
+  assert.match(rootHtml, /\/v1\/scripts\/render-site\.mjs\?v=1\.31-white-todo-progress/);
+  assert.match(v1Html, /\.\/styles\.css\?v=1\.31-white-todo-progress/);
+  assert.match(v1Html, /\.\/scripts\/render-site\.mjs\?v=1\.31-white-todo-progress/);
 });
 
 test("todo panel keeps extra items inside its own scroll area", async () => {
