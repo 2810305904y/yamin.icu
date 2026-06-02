@@ -7,6 +7,8 @@ node_modules/
 .vercel/
 
 # Local preview and browser artifacts
+preview*.log
+data/site-data.local.json
 v0/chrome-profile*/
 v1/server*.log
 v1/*.log

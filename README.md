@@ -1,7 +1,7 @@
 # 鸦珉.icu 个人主页
 
 当前阶段：V1.2
-当前小版本：V1.22
+当前小版本：V1.25
 项目定位：个人主页 / 项目地图 / 公开频道入口
 
 ## 线上地址
@@ -73,6 +73,20 @@ http://127.0.0.1:4173/admin
 ```
 
 当前编辑台只负责编辑草稿、预览和导出数据文件。它还不能直接写入线上网站。
+
+V1.25 起新增 `/api/site-data` 数据接口：
+
+- 本地预览没有数据库配置时，保存到 `data/site-data.local.json`。
+- 线上部署时，通过 Supabase REST API 写入数据库。
+- Supabase 建表脚本在 `supabase/site_pages.sql`。
+- Vercel 需要配置：
+  - `SUPABASE_URL`
+  - `SUPABASE_SERVICE_ROLE_KEY`
+  - `SITE_ADMIN_TOKEN`
+  - `SITE_DATA_TABLE`（可选，默认 `site_pages`）
+  - `SITE_DATA_ID`（可选，默认 `homepage-v1`）
+
+`SUPABASE_SERVICE_ROLE_KEY` 只放在 Vercel 环境变量里，不能放到浏览器端代码里。
 
 ## 检查
 

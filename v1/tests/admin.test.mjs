@@ -18,15 +18,20 @@ test("admin editor is available as a static page", async () => {
 
 test("admin editor supports local draft and data export workflow", async () => {
   const script = await readFile("admin/admin.mjs", "utf8");
+  const html = await readFile("admin/index.html", "utf8");
 
   assert.match(script, /yamin\.siteDataDraft\.v1/);
   assert.match(script, /saveDraft/);
+  assert.match(script, /saveOnline/);
+  assert.match(script, /\/api\/site-data/);
+  assert.match(script, /yamin\.adminToken\.v1/);
   assert.match(script, /downloadDataFile/);
   assert.match(script, /getDefaults/);
   assert.match(script, /moveItem/);
   assert.match(script, /deleteItem/);
   assert.match(script, /renderPreview/);
   assert.match(script, /data-preview-section/);
+  assert.match(html, /保存到线上/);
 });
 
 test("admin preview follows current editing section and hides thought color editing", async () => {
@@ -54,9 +59,17 @@ test("homepage cloud layer sits below the translucent map frame", async () => {
   assert.match(siteStyles, /background-size:\s*3200px 900px/);
   assert.match(siteStyles, /background-repeat:\s*repeat-x/);
   assert.match(siteStyles, /\.page\s*{[^}]*z-index:\s*1/s);
-  assert.match(siteStyles, /\.map-frame\s*{[^}]*rgba\(244, 250, 255, 0\.2\)/s);
+  assert.match(siteStyles, /\.map-frame\s*{[^}]*rgba\(244, 250, 255, 0\.(?:1[5-9]|2)\)/s);
   assert.doesNotMatch(siteStyles, /\.map-frame::after/);
   assert.doesNotMatch(siteStyles, /frame-cloud-drift/);
+});
+
+test("desktop map frame keeps a balanced wide layout while scaling on short screens", async () => {
+  const siteStyles = await readFile("v1/styles.css", "utf8");
+
+  assert.match(siteStyles, /width:\s*min\(2400px,\s*calc\(100vw - 28px\),\s*calc\(\(100vh - 28px\) \* 2\)\)/);
+  assert.match(siteStyles, /aspect-ratio:\s*2\s*\/\s*1/);
+  assert.doesNotMatch(siteStyles, /height:\s*min\(calc\(100vh - 28px\),\s*calc\(\(100vw - 28px\) \* 0\.5625\)\)/);
 });
 
 test("preview server routes root and admin pages", async () => {
@@ -65,4 +78,5 @@ test("preview server routes root and admin pages", async () => {
   assert.match(server, /join\(root, "index\.html"\)/);
   assert.match(server, /pathname === "\/admin"/);
   assert.match(server, /join\(root, "admin", "index\.html"\)/);
+  assert.match(server, /pathname === "\/api\/site-data"/);
 });

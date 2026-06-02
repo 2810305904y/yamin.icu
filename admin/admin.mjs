@@ -1,5 +1,6 @@
 import { siteData } from "/v1/content/site-data.mjs";
 import {
+  loadLiveSiteData,
   renderChannels,
   renderProjects,
   renderThoughts,
@@ -7,6 +8,7 @@ import {
 } from "/v1/scripts/render-site.mjs";
 
 const STORAGE_KEY = "yamin.siteDataDraft.v1";
+const ADMIN_TOKEN_KEY = "yamin.adminToken.v1";
 
 const sectionMeta = {
   projects: { label: "项目卡片", itemName: "项目" },
@@ -21,7 +23,7 @@ const statusToneOptions = ["live", "building", "plan", "quiet"];
 const variantOptions = ["large", "wide"];
 
 let activeSection = "projects";
-let state = loadDraft() || clone(siteData);
+let state = clone(siteData);
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -39,6 +41,20 @@ function loadDraft() {
 function saveDraft() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   setStatus("草稿已保存在当前浏览器。");
+}
+
+async function loadCurrentContent() {
+  const draft = loadDraft();
+  if (draft) {
+    state = draft;
+    render();
+    setStatus("已载入当前浏览器里的草稿。");
+    return;
+  }
+
+  state = clone(await loadLiveSiteData());
+  render();
+  setStatus("已载入当前线上内容。");
 }
 
 function setStatus(message) {
@@ -297,6 +313,88 @@ function escapeAttr(value) {
   return escapeText(value).replaceAll('"', "&quot;");
 }
 
+function getStoredAdminToken() {
+  try {
+    return localStorage.getItem(ADMIN_TOKEN_KEY) || "";
+  } catch {
+    return "";
+  }
+}
+
+function storeAdminToken(token) {
+  try {
+    if (token) localStorage.setItem(ADMIN_TOKEN_KEY, token);
+  } catch {
+    // Saving can still proceed for this request even if localStorage is unavailable.
+  }
+}
+
+function clearAdminToken() {
+  try {
+    localStorage.removeItem(ADMIN_TOKEN_KEY);
+  } catch {
+    // Nothing to clear when localStorage is unavailable.
+  }
+}
+
+function askAdminToken() {
+  const token = window.prompt("请输入后台保存口令。")?.trim() || "";
+  storeAdminToken(token);
+  return token;
+}
+
+async function putOnline(token = "") {
+  const headers = { "Content-Type": "application/json" };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const response = await fetch("/api/site-data", {
+    method: "PUT",
+    headers,
+    body: JSON.stringify(state),
+  });
+  const payload = await response.json().catch(() => ({}));
+  return { response, payload };
+}
+
+async function saveOnline() {
+  setStatus("正在保存到线上。");
+
+  let token = getStoredAdminToken();
+  let result = await putOnline(token);
+
+  if (result.response.status === 401) {
+    clearAdminToken();
+    token = askAdminToken();
+    if (!token) {
+      setStatus("没有保存：需要后台保存口令。");
+      return;
+    }
+    result = await putOnline(token);
+  }
+
+  if (!result.response.ok) {
+    setStatus(result.payload.error || "保存失败。");
+    return;
+  }
+
+  state = clone(result.payload.data || state);
+  localStorage.removeItem(STORAGE_KEY);
+  render();
+
+  if (result.payload.source === "local") {
+    setStatus("已保存到本地预览数据，首页刷新后可见。");
+  } else {
+    setStatus("已保存到线上数据库，首页刷新后可见。");
+  }
+}
+
+async function restoreOnlineContent() {
+  localStorage.removeItem(STORAGE_KEY);
+  state = clone(await loadLiveSiteData());
+  render();
+  setStatus("已恢复为当前线上内容。");
+}
+
 function downloadDataFile() {
   const text = `export const siteData = ${JSON.stringify(state, null, 2)};\n`;
   const blob = new Blob([text], { type: "text/javascript;charset=utf-8" });
@@ -306,10 +404,10 @@ function downloadDataFile() {
   anchor.download = "site-data.mjs";
   anchor.click();
   URL.revokeObjectURL(url);
-  setStatus("已生成数据文件。真正自动写入线上内容需要后续接存储。");
+  setStatus("已生成数据文件。也可以直接保存到线上。");
 }
 
-document.addEventListener("click", (event) => {
+document.addEventListener("click", async (event) => {
   const sectionButton = event.target.closest("[data-section]");
   if (sectionButton) {
     activeSection = sectionButton.dataset.section;
@@ -326,13 +424,12 @@ document.addEventListener("click", (event) => {
 
   if (action === "save-draft") {
     saveDraft();
+  } else if (action === "save-online") {
+    await saveOnline();
   } else if (action === "download") {
     downloadDataFile();
   } else if (action === "reset-draft") {
-    localStorage.removeItem(STORAGE_KEY);
-    state = clone(siteData);
-    render();
-    setStatus("已恢复为当前线上内容。");
+    await restoreOnlineContent();
   } else if (action === "add-item") {
     state[activeSection].push(getDefaults(activeSection));
     normalizeOrder(activeSection);
@@ -373,3 +470,4 @@ document.querySelector(".preview-panel").addEventListener("click", (event) => {
 });
 
 render();
+loadCurrentContent();

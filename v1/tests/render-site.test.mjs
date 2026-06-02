@@ -7,6 +7,7 @@ import {
   applyBackgroundLabMode,
   escapeHtml,
   getVisibleSortedItems,
+  loadLiveSiteData,
   renderChannels,
   renderProjects,
   renderThoughts,
@@ -53,6 +54,25 @@ test("background lab mode is controlled by the bg query parameter", () => {
   assert.equal(global.document.body.classList.value, false);
 
   delete global.document;
+});
+
+test("homepage loads API site data when available and falls back to bundled data", async () => {
+  const apiData = {
+    ...siteData,
+    identity: {
+      ...siteData.identity,
+      title: "接口里的鸦珉.icu",
+    },
+  };
+
+  const loaded = await loadLiveSiteData(async () => ({
+    ok: true,
+    json: async () => ({ data: apiData }),
+  }));
+  const fallback = await loadLiveSiteData(async () => ({ ok: false }));
+
+  assert.equal(loaded.identity.title, "接口里的鸦珉.icu");
+  assert.equal(fallback.identity.title, siteData.identity.title);
 });
 
 test("renderers output the visible homepage content", () => {
@@ -136,7 +156,7 @@ test("root homepage renders directly without redirecting to v1", async () => {
   assert.doesNotMatch(rootHtml, /window\.location/);
   assert.doesNotMatch(rootHtml, /url=\/v1/i);
   assert.match(rootHtml, /href="\/"/);
-  assert.match(rootHtml, /href="\/v1\/styles\.css"/);
-  assert.match(rootHtml, /src="\/v1\/scripts\/render-site\.mjs"/);
+  assert.match(rootHtml, /href="\/v1\/styles\.css(?:\?[^"]+)?"/);
+  assert.match(rootHtml, /src="\/v1\/scripts\/render-site\.mjs(?:\?[^"]+)?"/);
   assert.match(rootHtml, /data-projects/);
 });

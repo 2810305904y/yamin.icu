@@ -1,6 +1,8 @@
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { extname, join, normalize, resolve } from "node:path";
+import { handleSiteDataRequest } from "../api/site-data-store.mjs";
+import { siteData } from "./content/site-data.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const port = Number(process.env.PORT || 4173);
@@ -14,6 +16,14 @@ const mimeTypes = {
   ".svg": "image/svg+xml; charset=utf-8",
   ".png": "image/png",
 };
+
+async function readRequestBody(request) {
+  let body = "";
+  for await (const chunk of request) {
+    body += chunk;
+  }
+  return body;
+}
 
 function resolveRequestPath(url) {
   const pathname = decodeURIComponent(new URL(url, `http://localhost:${port}`).pathname);
@@ -42,6 +52,21 @@ function resolveRequestPath(url) {
 }
 
 const server = createServer(async (request, response) => {
+  const pathname = decodeURIComponent(new URL(request.url || "/", `http://localhost:${port}`).pathname);
+  if (pathname === "/api/site-data") {
+    const result = await handleSiteDataRequest({
+      method: request.method,
+      headers: request.headers,
+      body: await readRequestBody(request),
+      env: process.env,
+      fallbackData: siteData,
+    });
+
+    response.writeHead(result.status, result.headers);
+    response.end(result.body);
+    return;
+  }
+
   const filePath = resolveRequestPath(request.url || "/");
 
   if (!filePath) {
