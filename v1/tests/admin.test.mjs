@@ -50,6 +50,17 @@ test("admin preview follows current editing section and hides thought color edit
   assert.match(siteStyles, /\.todo-red/);
 });
 
+test("admin shell sits above the shared cloud background", async () => {
+  const styles = await readFile("admin/styles.css", "utf8");
+  const html = await readFile("admin/index.html", "utf8");
+
+  assert.match(styles, /\.admin-page::before\s*{[^}]*opacity:\s*0\.18/s);
+  assert.match(styles, /\.admin-shell\s*{[^}]*z-index:\s*1/s);
+  assert.match(styles, /\.admin-shell\s*{[^}]*background:\s*rgba\(255, 255, 255, 0\.94\)/s);
+  assert.match(styles, /\.editor-panel,[\s\S]*?\.preview-panel\s*{[^}]*background:\s*rgba\(255, 255, 255, 0\.93\)/s);
+  assert.match(html, /\/admin\/styles\.css\?v=1\.26-admin-cloud-shield/);
+});
+
 test("homepage cloud layer sits below the translucent map frame", async () => {
   const siteStyles = await readFile("v1/styles.css", "utf8");
 
