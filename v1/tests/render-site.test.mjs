@@ -172,9 +172,9 @@ test("thought collision physics separates active labels", () => {
   first.y = -4;
   first.vx = -20;
   first.vy = -10;
-  stepThoughtPhysics([first], { width: 180, height: 80 }, 1);
-  assert.equal(first.x, 8);
-  assert.equal(first.y, 8);
+  stepThoughtPhysics([first], { width: 180, height: 120 }, 1);
+  assert.equal(first.x, 40);
+  assert.equal(first.y, 40);
   assert.ok(first.vx > 0);
   assert.ok(first.vy > 0);
 });

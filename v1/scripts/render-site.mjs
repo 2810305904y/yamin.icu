@@ -37,7 +37,7 @@ const iconMap = {
 };
 
 const thoughtSpaceCleanups = new WeakMap();
-const THOUGHT_BOUND_PADDING = 8;
+const THOUGHT_BOUND_PADDING = 40;
 const thoughtTonePalette = ["green", "orange", "purple", "pink", "red", "yellow", "cyan", "blue"];
 
 export function escapeHtml(value) {
@@ -118,7 +118,7 @@ function thoughtSize(item) {
 }
 
 function thoughtAxisRange(axisSize, itemSize) {
-  const padding = axisSize > itemSize + THOUGHT_BOUND_PADDING * 2 ? THOUGHT_BOUND_PADDING : 0;
+  const padding = Math.min(THOUGHT_BOUND_PADDING, Math.max(0, (axisSize - itemSize) / 2));
   return {
     min: padding,
     max: Math.max(padding, axisSize - itemSize - padding),
