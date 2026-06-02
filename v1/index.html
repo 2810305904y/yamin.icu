@@ -3,20 +3,24 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>鸦珉.icu - 项目地图</title>
+    <title>鸦珉.icu</title>
     <meta
       name="description"
       content="一张不太正经的项目地图。"
     />
-    <link rel="stylesheet" href="./styles.css?v=1.3.11-mobile-fallback-thoughts" />
-    <script type="module" src="./scripts/render-site.mjs?v=1.3.11-mobile-fallback-thoughts"></script>
+    <link rel="stylesheet" href="./styles.css?v=1.4.0-desktop-map-final" />
+    <script type="module" src="./scripts/render-site.mjs?v=1.4.0-desktop-map-final"></script>
     <script>
       window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
     </script>
     <script defer src="/_vercel/insights/script.js"></script>
   </head>
   <body>
+    <div class="load-progress" data-load-progress data-load-state="boot" aria-hidden="true">
+      <span></span>
+    </div>
     <main class="page">
+      <div class="map-viewport" data-map-viewport>
       <section class="map-frame" aria-label="鸦珉个人主页项目地图">
         <section class="panel panel-projects" aria-labelledby="projects-title">
           <header class="section-title">
@@ -45,7 +49,6 @@
               <span class="project-copy">11点睡觉时，体内还剩几杯咖啡？</span>
               <span class="project-link">
                 <span>coffeesleep.cn</span>
-                <span aria-hidden="true">›</span>
               </span>
               <span class="status status-live">已上线</span>
             </a>
@@ -62,7 +65,6 @@
               <span class="project-copy">每天 3 分钟，看见算法之外的世界。</span>
               <span class="project-link">
                 <span>pojian.space</span>
-                <span aria-hidden="true">›</span>
               </span>
               <span class="status status-live">已上线</span>
             </a>
@@ -141,13 +143,8 @@
             </div>
             <div class="todo-row">
               <span class="todo-dot todo-blue"></span>
-              <span class="todo-text">域名稳定</span>
-              <span class="todo-track"><span style="width: 54%"></span></span>
-            </div>
-            <div class="todo-row">
-              <span class="todo-dot todo-purple"></span>
-              <span class="todo-text">3D 项目轮</span>
-              <span class="todo-track"><span style="width: 32%"></span></span>
+              <span class="todo-text">主页项目区3D轮更新</span>
+              <span class="todo-track"><span style="width: 0%"></span></span>
             </div>
           </div>
         </aside>
@@ -211,6 +208,7 @@
           </nav>
         </aside>
       </section>
+      </div>
     </main>
   </body>
 </html>

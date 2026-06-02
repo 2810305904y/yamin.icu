@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 import { siteData } from "../content/site-data.mjs";
 import {
   applyBackgroundLabMode,
+  calculateMapViewport,
   createInitialThoughtActiveFlags,
   createSeededRandom,
   createThoughtToneSequence,
@@ -18,6 +19,7 @@ import {
   renderTodos,
   resolveThoughtCollision,
   shouldUseCanvasClouds,
+  shouldUseThoughtMotion,
   stepThoughtPhysics,
 } from "../scripts/render-site.mjs";
 
@@ -87,8 +89,10 @@ test("site title and signature copy use the current wording", async () => {
   const v1Html = await readFile("v1/index.html", "utf8");
 
   assert.equal(siteData.identity.subtitle, "一张不太正经的项目地图");
-  assert.match(rootHtml, /<title>鸦珉\.icu - 项目地图<\/title>/);
-  assert.match(v1Html, /<title>鸦珉\.icu - 项目地图<\/title>/);
+  assert.match(rootHtml, /<title>鸦珉\.icu<\/title>/);
+  assert.match(v1Html, /<title>鸦珉\.icu<\/title>/);
+  assert.doesNotMatch(rootHtml, /<title>[^<]*项目地图[^<]*<\/title>/);
+  assert.doesNotMatch(v1Html, /<title>[^<]*项目地图[^<]*<\/title>/);
   assert.doesNotMatch(rootHtml, /项目地图 V1/);
   assert.doesNotMatch(v1Html, /项目地图 V1/);
   assert.doesNotMatch(rootHtml, /稍微不太正经/);
@@ -100,12 +104,17 @@ test("renderers output the visible homepage content", () => {
   const todoHtml = renderTodos(siteData.todos);
   const thoughtHtml = renderThoughts(siteData.thoughts);
   const channelHtml = renderChannels(siteData.channels);
+  const largeLinkBlocks = projectHtml.match(/<span class="project-link">[\s\S]*?<\/span>\s*<span class="status/g) || [];
 
   assert.match(projectHtml, /睡前剩几杯/);
   assert.match(projectHtml, /11点睡觉时，体内还剩几杯咖啡？/);
   assert.match(projectHtml, /coffeesleep\.cn/);
   assert.match(projectHtml, /破茧/);
   assert.match(projectHtml, /每天 3 分钟，看见算法之外的世界。/);
+  assert.equal(largeLinkBlocks.length, 2);
+  largeLinkBlocks.forEach((linkBlock) => {
+    assert.doesNotMatch(linkBlock, /aria-hidden="true">›/);
+  });
   assert.match(todoHtml, /视频粗剪工具/);
   assert.match(thoughtHtml, /被选择的成本/);
   assert.match(thoughtHtml, /AI革命/);
@@ -165,6 +174,13 @@ test("cloud canvas stays off on mobile-sized or constrained devices", () => {
   assert.equal(shouldUseCanvasClouds({ width: 1366, deviceMemory: 8, saveData: true }), false);
 });
 
+test("thought physics stays off on mobile-sized or constrained devices", () => {
+  assert.equal(shouldUseThoughtMotion({ width: 1366, deviceMemory: 8, saveData: false }), true);
+  assert.equal(shouldUseThoughtMotion({ width: 560, deviceMemory: 8, saveData: false }), false);
+  assert.equal(shouldUseThoughtMotion({ width: 1366, deviceMemory: 2, saveData: false }), false);
+  assert.equal(shouldUseThoughtMotion({ width: 1366, deviceMemory: 8, saveData: true }), false);
+});
+
 test("thought collision physics separates active labels", () => {
   const first = {
     active: true,
@@ -207,6 +223,38 @@ test("thought collision physics separates active labels", () => {
   assert.equal(first.y, 40);
   assert.ok(first.vx > 0);
   assert.ok(first.vy > 0);
+});
+
+test("thought bounds use the unscaled layout box inside the scaled map", async () => {
+  const script = await readFile("v1/scripts/render-site.mjs", "utf8");
+  const match = script.match(/function readThoughtBounds\(container\) \{([\s\S]*?)\n\}/);
+  assert.ok(match);
+
+  const readThoughtBounds = Function(`return function readThoughtBounds(container) {${match[1]}\n};`)();
+  const bounds = readThoughtBounds({
+    offsetWidth: 1120,
+    offsetHeight: 250,
+    clientWidth: 1080,
+    clientHeight: 240,
+    getBoundingClientRect: () => ({ width: 430, height: 92 }),
+  });
+
+  assert.deepEqual(bounds, {
+    width: 1120,
+    height: 250,
+  });
+});
+
+test("thought bubbles use a larger random scale range after the wider bounds", async () => {
+  const script = await readFile("v1/scripts/render-site.mjs", "utf8");
+
+  assert.match(script, /const THOUGHT_SCALE_MIN = 0\.96/);
+  assert.match(script, /const THOUGHT_SCALE_MAX = 1\.36/);
+  assert.match(script, /const THOUGHT_TARGET_SCALE_MIN = 0\.98/);
+  assert.match(script, /const THOUGHT_TARGET_SCALE_MAX = 1\.42/);
+  assert.match(script, /randomBetween\(random,\s*THOUGHT_SCALE_MIN,\s*THOUGHT_SCALE_MAX\)/);
+  assert.match(script, /randomBetween\(random,\s*THOUGHT_TARGET_SCALE_MIN,\s*THOUGHT_TARGET_SCALE_MAX\)/);
+  assert.doesNotMatch(script, /randomBetween\(random,\s*0\.84,\s*1\.2[24]\)/);
 });
 
 test("channels put bilibili first and include its public link", () => {
@@ -263,6 +311,9 @@ test("planned tools move from project cards into todo list", () => {
   assert.doesNotMatch(projectHtml, /社交媒体方向 App/);
   assert.match(todoHtml, /视频粗剪工具/);
   assert.match(todoHtml, /社交媒体方向 App/);
+  assert.match(todoHtml, /主页项目区3D轮更新/);
+  assert.doesNotMatch(todoHtml, /新的待办/);
+  assert.equal((todoHtml.match(/class="todo-row/g) || []).length, 3);
   assert.match(todoHtml, /width: 5%/);
   assert.match(todoHtml, /width: 0%/);
 });
@@ -306,4 +357,110 @@ test("root homepage renders directly and keeps a legacy module fallback", async 
   assert.match(v1Html, /thought-pill pill-green is-visible/);
   assert.match(v1Html, /data-thought-pill/);
   assert.match(v1Html, /AI革命/);
+  assert.doesNotMatch(v1Html, /<span class="project-link">[\s\S]*?<span aria-hidden="true">›<\/span>[\s\S]*?<span class="status/s);
+});
+
+test("homepage uses a lightweight progress bar while live data and animations settle", async () => {
+  const rootHtml = await readFile("index.html", "utf8");
+  const v1Html = await readFile("v1/index.html", "utf8");
+  const styles = await readFile("v1/styles.css", "utf8");
+  const script = await readFile("v1/scripts/render-site.mjs", "utf8");
+
+  assert.match(rootHtml, /data-load-progress/);
+  assert.match(v1Html, /data-load-progress/);
+  assert.match(styles, /\.load-progress\s*{[^}]*position:\s*fixed/s);
+  assert.match(styles, /\.load-progress\[data-load-state="complete"\]/);
+  assert.match(script, /function setPageLoadState/);
+  assert.match(script, /setPageLoadState\("content"\)/);
+  assert.match(script, /setPageLoadState\("complete"\)/);
+  assert.match(script, /function scheduleHomepageAnimations/);
+  assert.match(script, /initializeThoughts:\s*false/);
+  assert.match(script, /requestIdleCallback/);
+  assert.match(script, /timeoutMs:\s*1400/);
+});
+
+test("homepage uses a fixed 2:1 design canvas inside a scaled viewport shell", async () => {
+  const rootHtml = await readFile("index.html", "utf8");
+  const v1Html = await readFile("v1/index.html", "utf8");
+  const styles = await readFile("v1/styles.css", "utf8");
+  const script = await readFile("v1/scripts/render-site.mjs", "utf8");
+
+  assert.match(rootHtml, /<div class="map-viewport" data-map-viewport>\s*<section class="map-frame"/s);
+  assert.match(v1Html, /<div class="map-viewport" data-map-viewport>\s*<section class="map-frame"/s);
+  assert.match(styles, /--map-design-width:\s*2400px/);
+  assert.match(styles, /--map-design-height:\s*1200px/);
+  assert.match(styles, /--map-content-scale:\s*1/);
+  assert.match(styles, /\.map-viewport\s*{[^}]*width:\s*var\(--map-viewport-width\)/s);
+  assert.match(styles, /\.map-viewport\s*{[^}]*height:\s*var\(--map-viewport-height\)/s);
+  assert.match(styles, /\.map-frame\s*{[^}]*width:\s*var\(--map-design-width\)/s);
+  assert.match(styles, /\.map-frame\s*{[^}]*height:\s*var\(--map-design-height\)/s);
+  assert.match(styles, /\.map-frame\s*{[^}]*transform:\s*scale\(var\(--map-scale\)\)/s);
+  assert.match(styles, /\.map-frame\s*{[^}]*transform-origin:\s*top left/s);
+  assert.match(styles, /\.section-title\s*{[^}]*font-size:\s*calc\(54px \* var\(--map-content-scale\)\)/s);
+  assert.match(styles, /\.project-name\s*{[^}]*font-size:\s*calc\(34px \* var\(--map-content-scale\)\)/s);
+  assert.match(styles, /\.card-index\s*{[^}]*height:\s*calc\(34px \* var\(--map-content-scale\)\)/s);
+  assert.match(styles, /\.project-card\s*{[^}]*border-radius:\s*24px/s);
+  assert.match(styles, /\.project-card-large\s*{[^}]*width:\s*calc\(100% - 12px\)/s);
+  assert.match(styles, /\.project-illustration\s*{[^}]*width:\s*calc\(128px \* var\(--map-content-scale\)\)/s);
+  assert.match(styles, /\.project-card-large \.project-illustration\s*{[^}]*transform:\s*translateY\(calc\(8px \* var\(--map-content-scale\)\)\)/s);
+  assert.match(styles, /\.project-illustration svg\s*{[^}]*width:\s*66%/s);
+  assert.match(styles, /\.wide-icon\s*{[^}]*width:\s*calc\(76px \* var\(--map-content-scale\)\)/s);
+  assert.match(styles, /\.wide-icon svg\s*{[^}]*width:\s*68%/s);
+  assert.match(styles, /\.project-link\s*{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/s);
+  assert.doesNotMatch(styles, /\.project-link span:last-child/);
+  assert.match(styles, /\.project-link\s*{[^}]*width:\s*min\(72%,\s*267px\)/s);
+  assert.match(styles, /\.project-link\s*{[^}]*min-height:\s*calc\(50px \* var\(--map-content-scale\)\)/s);
+  assert.match(styles, /\.status\s*{[^}]*min-height:\s*calc\(32px \* var\(--map-content-scale\)\)/s);
+  assert.match(styles, /\.round-arrow\s*{[^}]*width:\s*calc\(38px \* var\(--map-content-scale\)\)/s);
+  assert.match(styles, /\.projects-grid\s*{[^}]*grid-template-columns:\s*minmax\(200px,\s*0\.94fr\)\s*minmax\(200px,\s*0\.94fr\)\s*minmax\(300px,\s*1\.4fr\)/s);
+  assert.match(styles, /\.project-card-wide\s*{[^}]*height:\s*calc\(100% - 10px\)/s);
+  assert.match(styles, /\.project-card-wide\s*{[^}]*width:\s*calc\(100% - 12px\)/s);
+  assert.match(styles, /\.project-card-wide\s*{[^}]*justify-self:\s*center/s);
+  assert.match(styles, /\.project-card-wide\s*{[^}]*grid-template-columns:\s*calc\(76px \* var\(--map-content-scale\)\) minmax\(0,\s*1fr\) auto/s);
+  assert.match(styles, /\.project-card-wide \.project-name\s*{[^}]*font-size:\s*calc\(25px \* var\(--map-content-scale\)\)/s);
+  assert.match(styles, /\.project-card-wide \.project-copy\s*{[^}]*font-size:\s*calc\(16px \* var\(--map-content-scale\)\)/s);
+  assert.doesNotMatch(styles, /\.projects-grid\s*{[^}]*width:\s*92%/s);
+  assert.doesNotMatch(styles, /\.projects-grid\s*{[^}]*justify-self:\s*start/s);
+  assert.match(styles, /\.panel-todos\s*{[^}]*padding:\s*38px 58px 60px/s);
+  assert.match(styles, /\.todo-text\s*{[^}]*font-size:\s*calc\(18px \* var\(--map-content-scale\)\)/s);
+  assert.match(styles, /\.panel-social\s*{[^}]*padding:\s*34px 58px/s);
+  assert.match(styles, /\.social-list\s*{[^}]*gap:\s*calc\(8px \* var\(--map-content-scale\)\)/s);
+  assert.match(styles, /\.social-list\s*{[^}]*padding-right:\s*8px/s);
+  assert.match(styles, /\.social-list a\s*{[^}]*min-height:\s*calc\(48px \* var\(--map-content-scale\)\)/s);
+  assert.match(styles, /\.social-list a\s*{[^}]*padding:\s*calc\(8px \* var\(--map-content-scale\)\)\s*calc\(14px \* var\(--map-content-scale\)\)/s);
+  assert.match(styles, /\.social-list a\s*{[^}]*font-size:\s*calc\(18px \* var\(--map-content-scale\)\)/s);
+  assert.match(styles, /\.thought-space\s*{[^}]*inset:\s*18px\s*40px\s*-40px\s*64px/s);
+  assert.match(styles, /\.thought-space \.thought-pill\s*{[^}]*width:\s*max-content/s);
+  assert.match(styles, /\.thought-space \.thought-pill\s*{[^}]*white-space:\s*nowrap/s);
+  assert.match(script, /const MAP_VIEWPORT_MARGIN = 44/);
+  assert.match(script, /const MAP_CONTENT_SCALE_MAX = 1\.3/);
+  assert.match(script, /const MAP_CONTENT_TARGET_SCALE = 1\.06/);
+  assert.doesNotMatch(styles, /\.map-frame\s*{[^}]*width:\s*min\(2400px,\s*calc\(100vw - 28px\)/s);
+  assert.doesNotMatch(styles, /@media \(max-width:\s*1100px\)\s*{[^}]*\.map-frame\s*{[^}]*display:\s*block/s);
+  assert.match(styles, /\.load-progress\s*{[^}]*position:\s*fixed/s);
+  assert.match(styles, /\.load-progress\s*{[^}]*contain:\s*layout paint style/s);
+  assert.match(styles, /\.load-progress\s*{[^}]*height:\s*2px/s);
+});
+
+test("map viewport scaling preserves the fixed design ratio", () => {
+  assert.deepEqual(calculateMapViewport({ width: 2600, height: 1400 }), {
+    contentScale: 1,
+    scale: 1,
+    width: 2400,
+    height: 1200,
+  });
+
+  assert.deepEqual(calculateMapViewport({ width: 2000, height: 1000 }), {
+    contentScale: 1.3,
+    scale: 0.796667,
+    width: 1912,
+    height: 956,
+  });
+
+  assert.deepEqual(calculateMapViewport({ width: 1200, height: 900 }), {
+    contentScale: 1.3,
+    scale: 0.481667,
+    width: 1156,
+    height: 578,
+  });
 });

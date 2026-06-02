@@ -98,7 +98,7 @@ export const siteData = {
     {
       id: "todo-mpw5cc13",
       order: 40,
-      visible: true,
+      visible: false,
       title: "新的待办",
       tone: "black",
       progress: 0,
@@ -106,7 +106,7 @@ export const siteData = {
     {
       id: "todo-mpw5cc7t",
       order: 50,
-      visible: true,
+      visible: false,
       title: "新的待办",
       tone: "blue",
       progress: 0,

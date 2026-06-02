@@ -42,6 +42,16 @@ const THOUGHT_MIN_VISIBLE = 7;
 const THOUGHT_MAX_VISIBLE = 8;
 const THOUGHT_MIN_TOGGLE_DELAY = 4200;
 const THOUGHT_MAX_TOGGLE_DELAY = 6800;
+const THOUGHT_SCALE_MIN = 0.96;
+const THOUGHT_SCALE_MAX = 1.36;
+const THOUGHT_TARGET_SCALE_MIN = 0.98;
+const THOUGHT_TARGET_SCALE_MAX = 1.42;
+const LIVE_DATA_TIMEOUT = 1400;
+const MAP_DESIGN_WIDTH = 2400;
+const MAP_DESIGN_HEIGHT = 1200;
+const MAP_VIEWPORT_MARGIN = 44;
+const MAP_CONTENT_SCALE_MAX = 1.3;
+const MAP_CONTENT_TARGET_SCALE = 1.06;
 const thoughtTonePalette = ["green", "orange", "purple", "pink", "red", "yellow", "cyan", "blue"];
 
 export function escapeHtml(value) {
@@ -75,6 +85,55 @@ function randomBetween(random, min, max) {
 
 function randomInteger(random, min, max) {
   return min + Math.floor(random() * (max - min + 1));
+}
+
+function roundScale(value) {
+  return Math.round(value * 1000000) / 1000000;
+}
+
+export function calculateMapViewport(viewport, options = {}) {
+  const designWidth = Math.max(1, Number(options.designWidth || MAP_DESIGN_WIDTH));
+  const designHeight = Math.max(1, Number(options.designHeight || MAP_DESIGN_HEIGHT));
+  const margin = Math.max(0, Number(options.margin == null ? MAP_VIEWPORT_MARGIN : options.margin));
+  const viewportWidth = Math.max(0, Number(viewport && viewport.width ? viewport.width : 0));
+  const viewportHeight = Math.max(0, Number(viewport && viewport.height ? viewport.height : 0));
+  const availableWidth = Math.max(1, viewportWidth - margin);
+  const availableHeight = Math.max(1, viewportHeight - margin);
+  const rawScale = Math.min(1, availableWidth / designWidth, availableHeight / designHeight);
+  const scale = roundScale(Number.isFinite(rawScale) && rawScale > 0 ? rawScale : 1);
+
+  const contentScale = scale >= 1 ? 1 : Math.min(MAP_CONTENT_SCALE_MAX, MAP_CONTENT_TARGET_SCALE / scale);
+
+  return {
+    contentScale: roundScale(contentScale),
+    scale,
+    width: Math.round(designWidth * scale),
+    height: Math.round(designHeight * scale),
+  };
+}
+
+export function updateMapViewportScale(viewport = window) {
+  if (typeof document === "undefined" || !document.documentElement || !viewport) return;
+
+  const size = calculateMapViewport({
+    width: viewport.innerWidth,
+    height: viewport.innerHeight,
+  });
+
+  document.documentElement.style.setProperty("--map-scale", String(size.scale));
+  document.documentElement.style.setProperty("--map-content-scale", String(size.contentScale));
+  document.documentElement.style.setProperty("--map-viewport-width", `${size.width}px`);
+  document.documentElement.style.setProperty("--map-viewport-height", `${size.height}px`);
+}
+
+function initMapViewportScale() {
+  if (typeof window === "undefined") return;
+
+  updateMapViewportScale(window);
+  window.addEventListener("resize", () => updateMapViewportScale(window), { passive: true });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", () => updateMapViewportScale(window), { passive: true });
+  }
 }
 
 export function createThoughtVisibilityRange(count) {
@@ -267,7 +326,6 @@ function renderLargeProject(project, index) {
       <span class="project-copy">${escapeHtml(project.description)}</span>
       <span class="project-link">
         <span>${escapeHtml(project.urlLabel || "暂时没有门牌号")}</span>
-        <span aria-hidden="true">›</span>
       </span>
       ${renderStatus(project)}
     </a>
@@ -327,10 +385,14 @@ export function renderThoughts(thoughts) {
 }
 
 function readThoughtBounds(container) {
-  const rect = container.getBoundingClientRect();
+  const rect =
+    typeof container.getBoundingClientRect === "function" ? container.getBoundingClientRect() : { width: 0, height: 0 };
+  const layoutWidth = container.offsetWidth || container.clientWidth || rect.width;
+  const layoutHeight = container.offsetHeight || container.clientHeight || rect.height;
+
   return {
-    width: Math.max(1, rect.width),
-    height: Math.max(1, rect.height),
+    width: Math.max(1, layoutWidth),
+    height: Math.max(1, layoutHeight),
   };
 }
 
@@ -351,8 +413,8 @@ function applyThoughtStyle(item) {
 
 function resetThoughtMotion(item, random, bounds) {
   measureThoughtItem(item);
-  item.scale = randomBetween(random, 0.84, 1.22);
-  item.targetScale = randomBetween(random, 0.84, 1.24);
+  item.scale = randomBetween(random, THOUGHT_SCALE_MIN, THOUGHT_SCALE_MAX);
+  item.targetScale = randomBetween(random, THOUGHT_TARGET_SCALE_MIN, THOUGHT_TARGET_SCALE_MAX);
   item.rotation = randomBetween(random, -7, 7);
   item.rotationSpeed = randomBetween(random, -8, 8);
 
@@ -376,6 +438,14 @@ function setThoughtActive(item, active, random, bounds, pickThoughtTone) {
 
 function pickRandomItem(random, items) {
   return items[Math.floor(random() * items.length)];
+}
+
+function prefersReducedMotion() {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
 }
 
 function toggleThoughtVisibility(items, random, bounds, minVisible, maxVisible, pickThoughtTone) {
@@ -408,7 +478,7 @@ export function initThoughtSpace(container) {
   }, 131 + Math.floor(Math.random() * 1000003));
   const random = createSeededRandom(seed);
   const pickThoughtTone = createThoughtTonePicker(random);
-  const motionAllowed = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const motionAllowed = !prefersReducedMotion() && shouldUseThoughtMotion(readCloudRuntimeOptions());
   const visibilityRange = createThoughtVisibilityRange(elements.length);
   const minVisible = visibilityRange.min;
   const maxVisible = visibilityRange.max;
@@ -452,18 +522,16 @@ export function initThoughtSpace(container) {
     const dt = lastTime ? Math.min((time - lastTime) / 1000, 0.04) : 0;
     lastTime = time;
 
-    items.forEach((item) => {
-      measureThoughtItem(item);
-      if (!item.active) return;
-
-      if (time >= item.nextScaleAt) {
-        item.targetScale = randomBetween(random, 0.84, 1.24);
-        item.nextScaleAt = time + randomBetween(random, 2600, 6200);
-      }
-      item.scale += (item.targetScale - item.scale) * Math.min(1, dt * 1.2);
-    });
-
     if (motionAllowed) {
+      items.forEach((item) => {
+        if (!item.active) return;
+
+        if (time >= item.nextScaleAt) {
+          item.targetScale = randomBetween(random, THOUGHT_TARGET_SCALE_MIN, THOUGHT_TARGET_SCALE_MAX);
+          item.nextScaleAt = time + randomBetween(random, 2600, 6200);
+        }
+        item.scale += (item.targetScale - item.scale) * Math.min(1, dt * 1.2);
+      });
       stepThoughtPhysics(items, bounds, dt);
     }
 
@@ -480,6 +548,7 @@ export function initThoughtSpace(container) {
       : new ResizeObserver(() => {
           bounds = readThoughtBounds(container);
           items.forEach((item) => {
+            measureThoughtItem(item);
             clampThoughtPosition(item, bounds);
             applyThoughtStyle(item);
           });
@@ -525,7 +594,60 @@ export function renderSiteSections(data) {
   };
 }
 
-export function mountSite(data = siteData) {
+function setPageLoadState(state) {
+  if (typeof document === "undefined") return;
+
+  const progress = document.querySelector("[data-load-progress]");
+  if (!progress) return;
+
+  progress.dataset.loadState = state;
+  if (state === "complete" && typeof window !== "undefined") {
+    window.setTimeout(() => {
+      progress.hidden = true;
+    }, 680);
+  }
+}
+
+function requestIdleWork(callback, delay = 420) {
+  if (typeof window === "undefined") {
+    callback();
+    return () => {};
+  }
+
+  if (typeof window.requestIdleCallback === "function") {
+    const idleId = window.requestIdleCallback(callback, { timeout: delay + 900 });
+    return () => {
+      if (typeof window.cancelIdleCallback === "function") {
+        window.cancelIdleCallback(idleId);
+      }
+    };
+  }
+
+  const timer = window.setTimeout(callback, delay);
+  return () => window.clearTimeout(timer);
+}
+
+function scheduleHomepageAnimations() {
+  if (typeof document === "undefined") return;
+
+  const thoughts = document.querySelector("[data-thoughts]");
+  requestIdleWork(() => {
+    if (thoughts && document.body.contains(thoughts)) {
+      initThoughtSpace(thoughts);
+    }
+  }, 420);
+
+  requestIdleWork(() => {
+    try {
+      initCloudCanvasBackground();
+    } catch (error) {
+      document.body.classList.remove("canvas-clouds-ready");
+    }
+  }, 760);
+}
+
+export function mountSite(data = siteData, options = {}) {
+  const shouldInitializeThoughts = options.initializeThoughts !== false;
   const rendered = renderSiteSections(data);
   const targets = {
     projects: document.querySelector("[data-projects]"),
@@ -540,28 +662,46 @@ export function mountSite(data = siteData) {
   if (targets.todos) targets.todos.innerHTML = rendered.todos;
   if (targets.thoughts) {
     targets.thoughts.innerHTML = rendered.thoughts;
-    initThoughtSpace(targets.thoughts);
+    if (shouldInitializeThoughts) {
+      initThoughtSpace(targets.thoughts);
+    }
   }
   if (targets.channels) targets.channels.innerHTML = rendered.channels;
   if (targets.signatureTitle) targets.signatureTitle.textContent = data.identity.title;
   if (targets.signatureSubtitle) targets.signatureSubtitle.textContent = data.identity.subtitle;
 }
 
-export async function loadLiveSiteData(fetchFn = fetch) {
+export async function loadLiveSiteData(fetchFn = fetch, options = {}) {
+  const timeoutMs = Math.max(0, Number(options.timeoutMs == null ? LIVE_DATA_TIMEOUT : options.timeoutMs));
+  const requestOptions = { cache: "no-store" };
+  let abortController = null;
+  let timeoutId = 0;
+
   try {
-    const response = await fetchFn("/api/site-data", { cache: "no-store" });
+    if (timeoutMs && typeof AbortController !== "undefined") {
+      abortController = new AbortController();
+      requestOptions.signal = abortController.signal;
+      timeoutId = globalThis.setTimeout(() => abortController.abort(), timeoutMs);
+    }
+
+    const response = await fetchFn("/api/site-data", requestOptions);
     if (!response.ok) return siteData;
 
     const payload = await response.json();
     return (payload && payload.data) || siteData;
   } catch (error) {
     return siteData;
+  } finally {
+    if (timeoutId) globalThis.clearTimeout(timeoutId);
   }
 }
 
 export async function mountLiveSite() {
-  mountSite(siteData);
-  mountSite(await loadLiveSiteData());
+  mountSite(siteData, { initializeThoughts: false });
+  setPageLoadState("content");
+  mountSite(await loadLiveSiteData(fetch, { timeoutMs: 1400 }), { initializeThoughts: false });
+  setPageLoadState("complete");
+  scheduleHomepageAnimations();
 }
 
 function readCloudRuntimeOptions() {
@@ -579,6 +719,17 @@ export function shouldUseCanvasClouds(options = {}) {
 
   if (options.saveData === true) return false;
   if (width && width <= 1100) return false;
+  if (memory && memory < 4) return false;
+
+  return true;
+}
+
+export function shouldUseThoughtMotion(options = {}) {
+  const width = Math.max(0, Number(options.width || 0));
+  const memory = options.deviceMemory == null ? null : Number(options.deviceMemory);
+
+  if (options.saveData === true) return false;
+  if (width && width <= 760) return false;
   if (memory && memory < 4) return false;
 
   return true;
@@ -775,7 +926,7 @@ export function initCloudCanvasBackground() {
   const texture = createCloudTexture();
   const textureWidth = Number(texture.dataset.cssWidth);
   const textureHeight = Number(texture.dataset.cssHeight);
-  const motionAllowed = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const motionAllowed = !prefersReducedMotion();
   let frameId = 0;
 
   function draw(time = 0) {
@@ -821,12 +972,8 @@ export function initCloudCanvasBackground() {
 
 if (typeof document !== "undefined") {
   applyBackgroundLabMode();
+  initMapViewportScale();
   if (document.querySelector("[data-projects]")) {
-    mountLiveSite();
-  }
-  try {
-    initCloudCanvasBackground();
-  } catch (error) {
-    document.body.classList.remove("canvas-clouds-ready");
+    void mountLiveSite();
   }
 }

@@ -100,12 +100,15 @@ test("homepage cloud layer sits below the translucent map frame", async () => {
   assert.doesNotMatch(siteStyles, /frame-cloud-drift/);
 });
 
-test("desktop map frame keeps a balanced wide layout while scaling on short screens", async () => {
+test("desktop map frame keeps a balanced wide layout through the viewport shell", async () => {
   const siteStyles = await readFile("v1/styles.css", "utf8");
 
-  assert.match(siteStyles, /width:\s*min\(2400px,\s*calc\(100vw - 28px\),\s*calc\(\(100vh - 28px\) \* 2\)\)/);
+  assert.match(siteStyles, /\.map-viewport\s*{[^}]*width:\s*var\(--map-viewport-width\)/s);
+  assert.match(siteStyles, /\.map-frame\s*{[^}]*width:\s*var\(--map-design-width\)/s);
+  assert.match(siteStyles, /\.map-frame\s*{[^}]*height:\s*var\(--map-design-height\)/s);
+  assert.match(siteStyles, /\.map-frame\s*{[^}]*transform:\s*scale\(var\(--map-scale\)\)/s);
   assert.match(siteStyles, /aspect-ratio:\s*2\s*\/\s*1/);
-  assert.doesNotMatch(siteStyles, /height:\s*min\(calc\(100vh - 28px\),\s*calc\(\(100vw - 28px\) \* 0\.5625\)\)/);
+  assert.doesNotMatch(siteStyles, /width:\s*min\(2400px,\s*calc\(100vw - 28px\)/);
 });
 
 test("project cards keep a slightly slimmer desktop footprint", async () => {
@@ -114,13 +117,27 @@ test("project cards keep a slightly slimmer desktop footprint", async () => {
   const v1Html = await readFile("v1/index.html", "utf8");
 
   assert.match(siteStyles, /grid-template-columns:\s*minmax\(200px,\s*0\.94fr\)\s*minmax\(200px,\s*0\.94fr\)\s*minmax\(300px,\s*1\.4fr\)/);
+  assert.match(siteStyles, /\.project-card\s*{[^}]*border-radius:\s*24px/s);
+  assert.match(siteStyles, /\.project-card-large\s*{[^}]*width:\s*calc\(100% - 12px\)/s);
+  assert.match(siteStyles, /\.project-illustration\s*{[^}]*width:\s*calc\(128px \* var\(--map-content-scale\)\)/s);
+  assert.match(siteStyles, /\.project-card-large \.project-illustration\s*{[^}]*transform:\s*translateY\(calc\(8px \* var\(--map-content-scale\)\)\)/s);
+  assert.match(siteStyles, /\.project-card-wide\s*{[^}]*height:\s*calc\(100% - 10px\)/s);
+  assert.match(siteStyles, /\.project-card-wide\s*{[^}]*width:\s*calc\(100% - 12px\)/s);
+  assert.match(siteStyles, /\.project-card-wide\s*{[^}]*justify-self:\s*center/s);
+  assert.match(siteStyles, /\.project-card-wide\s*{[^}]*grid-template-columns:\s*calc\(76px \* var\(--map-content-scale\)\) minmax\(0,\s*1fr\) auto/s);
+  assert.match(siteStyles, /\.project-card-wide \.project-name\s*{[^}]*font-size:\s*calc\(25px \* var\(--map-content-scale\)\)/s);
+  assert.match(siteStyles, /\.project-link\s*{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/s);
+  assert.doesNotMatch(siteStyles, /\.project-link span:last-child/);
+  assert.doesNotMatch(siteStyles, /\.projects-grid\s*{[^}]*width:\s*92%/s);
+  assert.doesNotMatch(siteStyles, /\.projects-grid\s*{[^}]*justify-self:\s*start/s);
+  assert.doesNotMatch(siteStyles, /grid-template-columns:\s*minmax\(180px,\s*0\.86fr\)\s*minmax\(180px,\s*0\.86fr\)\s*minmax\(280px,\s*1\.2fr\)/);
   assert.doesNotMatch(siteStyles, /grid-template-columns:\s*minmax\(210px,\s*1fr\)\s*minmax\(210px,\s*1fr\)\s*minmax\(280px,\s*1\.28fr\)/);
-  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.3\.11-mobile-fallback-thoughts/);
-  assert.match(rootHtml, /\/v1\/scripts\/render-site\.mjs\?v=1\.3\.11-mobile-fallback-thoughts/);
+  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.4\.0-desktop-map-final/);
+  assert.match(rootHtml, /\/v1\/scripts\/render-site\.mjs\?v=1\.4\.0-desktop-map-final/);
   assert.match(rootHtml, /<script nomodule>/);
   assert.match(rootHtml, /window\.location\.replace\("\/v1\/"\)/);
-  assert.match(v1Html, /\.\/styles\.css\?v=1\.3\.11-mobile-fallback-thoughts/);
-  assert.match(v1Html, /\.\/scripts\/render-site\.mjs\?v=1\.3\.11-mobile-fallback-thoughts/);
+  assert.match(v1Html, /\.\/styles\.css\?v=1\.4\.0-desktop-map-final/);
+  assert.match(v1Html, /\.\/scripts\/render-site\.mjs\?v=1\.4\.0-desktop-map-final/);
 });
 
 test("version naming uses the new three-part small release format", async () => {
@@ -128,10 +145,13 @@ test("version naming uses the new three-part small release format", async () => 
   const adminHtml = await readFile("admin/index.html", "utf8");
   const namingRules = await readFile("项目进度/2026-06-01_版本命名规则.md", "utf8");
 
-  assert.match(readme, /当前阶段：V1\.3/);
-  assert.match(readme, /当前小版本：V1\.3\.11/);
-  assert.match(adminHtml, /<p class="admin-kicker">V1\.3\.11<\/p>/);
-  assert.match(namingRules, /V1\.3\.10\s*->\s*V1\.3 阶段内的第 10 次小更新/);
+  assert.match(readme, /当前阶段：V1\.4/);
+  assert.match(readme, /当前小版本：V1\.4\.0/);
+  assert.match(readme, /当前主页视觉基准（V1\.4）/);
+  assert.match(readme, /2400 x 1200/);
+  assert.match(adminHtml, /<p class="admin-kicker">V1\.4\.0<\/p>/);
+  assert.match(namingRules, /当前阶段记为 `V1\.4`/);
+  assert.match(namingRules, /V1\.4\.0\s*->\s*V1\.4 阶段的视觉定稿起点/);
   assert.match(namingRules, /三段式/);
 });
 
@@ -140,18 +160,24 @@ test("todo panel keeps extra items inside its own scroll area", async () => {
 
   assert.match(siteStyles, /\.panel-todos\s*{[^}]*grid-template-rows:\s*auto minmax\(0,\s*1fr\)/s);
   assert.match(siteStyles, /\.panel-todos\s*{[^}]*overflow:\s*hidden/s);
+  assert.match(siteStyles, /\.panel-todos\s*{[^}]*padding:\s*38px 58px 60px/s);
   assert.match(siteStyles, /\.panel-todos \.todo-list\s*{[^}]*overflow-y:\s*auto/s);
-  assert.match(siteStyles, /\.todo-row\s*{[^}]*min-height:\s*clamp\(48px,\s*5vh,\s*66px\)/s);
+  assert.match(siteStyles, /\.todo-row\s*{[^}]*min-height:\s*calc\(60px \* var\(--map-content-scale\)\)/s);
+  assert.match(siteStyles, /\.todo-text\s*{[^}]*font-size:\s*calc\(18px \* var\(--map-content-scale\)\)/s);
 });
 
 test("social links match todo row width rhythm", async () => {
   const siteStyles = await readFile("v1/styles.css", "utf8");
 
-  assert.match(siteStyles, /\.social-list a\s*{[^}]*grid-template-columns:\s*14px minmax\(0,\s*1fr\) auto/s);
-  assert.match(siteStyles, /\.social-list\s*{[^}]*padding-right:\s*clamp\(2px,\s*0\.4vw,\s*8px\)/s);
-  assert.match(siteStyles, /\.social-list a\s*{[^}]*padding:\s*clamp\(10px,\s*1\.1vh,\s*13px\)\s*16px/s);
-  assert.match(siteStyles, /\.social-mark\s*{[^}]*width:\s*13px/s);
-  assert.match(siteStyles, /\.social-mark\s*{[^}]*height:\s*13px/s);
+  assert.match(siteStyles, /\.social-list a\s*{[^}]*grid-template-columns:\s*calc\(12px \* var\(--map-content-scale\)\) minmax\(0,\s*1fr\) auto/s);
+  assert.match(siteStyles, /\.panel-social\s*{[^}]*padding:\s*34px 58px/s);
+  assert.match(siteStyles, /\.social-list\s*{[^}]*gap:\s*calc\(8px \* var\(--map-content-scale\)\)/s);
+  assert.match(siteStyles, /\.social-list\s*{[^}]*padding-right:\s*8px/s);
+  assert.match(siteStyles, /\.social-list a\s*{[^}]*min-height:\s*calc\(48px \* var\(--map-content-scale\)\)/s);
+  assert.match(siteStyles, /\.social-list a\s*{[^}]*padding:\s*calc\(8px \* var\(--map-content-scale\)\)\s*calc\(14px \* var\(--map-content-scale\)\)/s);
+  assert.match(siteStyles, /\.social-list a\s*{[^}]*font-size:\s*calc\(18px \* var\(--map-content-scale\)\)/s);
+  assert.match(siteStyles, /\.social-mark\s*{[^}]*width:\s*calc\(12px \* var\(--map-content-scale\)\)/s);
+  assert.match(siteStyles, /\.social-mark\s*{[^}]*height:\s*calc\(12px \* var\(--map-content-scale\)\)/s);
 });
 
 test("thought area is prepared as a bounded motion space", async () => {
@@ -161,8 +187,10 @@ test("thought area is prepared as a bounded motion space", async () => {
 
   assert.match(siteStyles, /\.thought-space\s*{[^}]*position:\s*absolute/s);
   assert.match(siteStyles, /\.thought-space\s*{[^}]*overflow:\s*hidden/s);
-  assert.match(siteStyles, /\.panel-thoughts \.section-title-small\s*{[^}]*transform:\s*translateY\(clamp\(-18px,\s*-1\.8vh,\s*-10px\)\)/s);
-  assert.match(siteStyles, /\.thought-space\s*{[^}]*inset:\s*0px[^}]*clamp\(24px,\s*3vw,\s*58px\)[^}]*0px[^}]*clamp\(22px,\s*3\.2vw,\s*58px\)/s);
+  assert.match(siteStyles, /\.panel-thoughts \.section-title-small\s*{[^}]*transform:\s*translateY\(-18px\)/s);
+  assert.match(siteStyles, /\.thought-space\s*{[^}]*inset:\s*18px\s*40px\s*-40px\s*64px/s);
+  assert.match(siteStyles, /\.thought-space \.thought-pill\s*{[^}]*width:\s*max-content/s);
+  assert.match(siteStyles, /\.thought-space \.thought-pill\s*{[^}]*white-space:\s*nowrap/s);
   assert.match(siteStyles, /\.thought-space \.thought-pill\s*{[^}]*will-change:\s*transform,\s*opacity/s);
   assert.match(siteStyles, /\.thought-space \.thought-pill\s*{[^}]*opacity\s*720ms\s*ease/s);
   assert.match(script, /function toggleThoughtVisibility/);
@@ -170,9 +198,11 @@ test("thought area is prepared as a bounded motion space", async () => {
   assert.match(script, /THOUGHT_MAX_VISIBLE\s*=\s*8/);
   assert.match(script, /function readCloudRuntimeOptions/);
   assert.match(script, /shouldUseCanvasClouds/);
+  assert.match(script, /shouldUseThoughtMotion/);
   assert.match(script, /THOUGHT_BOUND_PADDING\s*=\s*40/);
   assert.match(script, /Math\.min\(THOUGHT_BOUND_PADDING,\s*Math\.max\(0,\s*\(axisSize - itemSize\) \/ 2\)\)/);
-  assert.ok(script.indexOf("mountLiveSite();") < script.indexOf("initCloudCanvasBackground();"));
+  assert.match(script, /function scheduleHomepageAnimations/);
+  assert.match(script, /void mountLiveSite\(\)/);
   assert.doesNotMatch(script, /replaceAll|\?\?|\?\./);
   assert.match(script, /window\.setTimeout/);
   assert.match(script, /stepThoughtPhysics\(items,\s*bounds,\s*dt\)/);
