@@ -5,6 +5,8 @@ import { readFile } from "node:fs/promises";
 import { siteData } from "../content/site-data.mjs";
 import {
   applyBackgroundLabMode,
+  createSeededRandom,
+  createThoughtToneSequence,
   escapeHtml,
   getVisibleSortedItems,
   loadLiveSiteData,
@@ -77,6 +79,19 @@ test("homepage loads API site data when available and falls back to bundled data
   assert.equal(fallback.identity.title, siteData.identity.title);
 });
 
+test("site title and signature copy use the current wording", async () => {
+  const rootHtml = await readFile("index.html", "utf8");
+  const v1Html = await readFile("v1/index.html", "utf8");
+
+  assert.equal(siteData.identity.subtitle, "一张不太正经的项目地图");
+  assert.match(rootHtml, /<title>鸦珉\.icu - 项目地图<\/title>/);
+  assert.match(v1Html, /<title>鸦珉\.icu - 项目地图<\/title>/);
+  assert.doesNotMatch(rootHtml, /项目地图 V1/);
+  assert.doesNotMatch(v1Html, /项目地图 V1/);
+  assert.doesNotMatch(rootHtml, /稍微不太正经/);
+  assert.doesNotMatch(v1Html, /稍微不太正经/);
+});
+
 test("renderers output the visible homepage content", () => {
   const projectHtml = renderProjects(siteData.projects);
   const todoHtml = renderTodos(siteData.todos);
@@ -99,6 +114,25 @@ test("thought pills render as motion-ready collision bodies", () => {
   assert.match(thoughtHtml, /data-thought-pill/);
   assert.match(thoughtHtml, /data-thought-index="0"/);
   assert.match(thoughtHtml, /thought-pill pill-/);
+});
+
+test("thought colors are automatically balanced instead of following stored tones", () => {
+  const thoughtHtml = renderThoughts(
+    Array.from({ length: 8 }, (_, index) => ({
+      text: `idea ${index}`,
+      order: index * 10,
+      visible: true,
+      tone: "blue",
+    })),
+  );
+  const sequence = createThoughtToneSequence(8, createSeededRandom(17));
+
+  assert.equal(new Set(sequence).size, 8);
+  assert.equal(siteData.thoughts.every((thought) => !("tone" in thought)), true);
+  assert.match(thoughtHtml, /pill-green/);
+  assert.match(thoughtHtml, /pill-orange/);
+  assert.match(thoughtHtml, /pill-purple/);
+  assert.equal((thoughtHtml.match(/pill-blue/g) || []).length, 1);
 });
 
 test("thought collision physics separates active labels", () => {
@@ -138,9 +172,9 @@ test("thought collision physics separates active labels", () => {
   first.y = -4;
   first.vx = -20;
   first.vy = -10;
-  stepThoughtPhysics([first], { width: 180, height: 80 }, 1);
-  assert.equal(first.x, 8);
-  assert.equal(first.y, 8);
+  stepThoughtPhysics([first], { width: 180, height: 120 }, 1);
+  assert.equal(first.x, 40);
+  assert.equal(first.y, 40);
   assert.ok(first.vx > 0);
   assert.ok(first.vy > 0);
 });

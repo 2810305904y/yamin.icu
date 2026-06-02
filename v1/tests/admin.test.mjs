@@ -35,8 +35,11 @@ test("admin editor supports local draft and data export workflow", async () => {
 });
 
 test("admin preview follows current editing section and hides thought color editing", async () => {
-  const script = await readFile("admin/admin.mjs", "utf8");
+  const script = (await readFile("admin/admin.mjs", "utf8")).replaceAll("\r\n", "\n");
   const fieldMarkupStart = script.indexOf("function fieldMarkup");
+  const defaultsStart = script.indexOf('if (section === "thoughts")');
+  const defaultsEnd = script.indexOf('return {\n    id: makeId("channel")', defaultsStart);
+  const defaultsBlock = script.slice(defaultsStart, defaultsEnd);
   const thoughtBlockStart = script.indexOf('if (section === "thoughts")', fieldMarkupStart);
   const channelBlockStart = script.indexOf('return `\n    ${textInput("名称"', thoughtBlockStart);
   const thoughtBlock = script.slice(thoughtBlockStart, channelBlockStart);
@@ -51,6 +54,10 @@ test("admin preview follows current editing section and hides thought color edit
   assert.match(renderEditorBlock, /activeSection === "thoughts"\s*\?\s*""/);
   assert.match(styles, /\.thought-editor-card\s*{[^}]*border-radius:\s*999px/s);
   assert.doesNotMatch(thoughtBlock, /selectInput\("颜色", "tone"/);
+  assert.doesNotMatch(defaultsBlock, /tone:\s*"blue"/);
+  assert.match(script, /function prepareSiteDataForSave/);
+  assert.match(script, /data\.thoughts = \(data\.thoughts \|\| \[\]\)\.map\(\(\{ tone, \.\.\.thought \}\) => thought\)/);
+  assert.match(script, /JSON\.stringify\(prepareSiteDataForSave\(state\)\)/);
   assert.match(siteStyles, /\.todo-pink/);
   assert.match(siteStyles, /\.todo-red/);
 });
@@ -108,10 +115,10 @@ test("project cards keep a slightly slimmer desktop footprint", async () => {
 
   assert.match(siteStyles, /grid-template-columns:\s*minmax\(200px,\s*0\.94fr\)\s*minmax\(200px,\s*0\.94fr\)\s*minmax\(300px,\s*1\.4fr\)/);
   assert.doesNotMatch(siteStyles, /grid-template-columns:\s*minmax\(210px,\s*1fr\)\s*minmax\(210px,\s*1fr\)\s*minmax\(280px,\s*1\.28fr\)/);
-  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.32-white-todo-standard/);
-  assert.match(rootHtml, /\/v1\/scripts\/render-site\.mjs\?v=1\.32-white-todo-standard/);
-  assert.match(v1Html, /\.\/styles\.css\?v=1\.32-white-todo-standard/);
-  assert.match(v1Html, /\.\/scripts\/render-site\.mjs\?v=1\.32-white-todo-standard/);
+  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.35-thought-edge-buffer/);
+  assert.match(rootHtml, /\/v1\/scripts\/render-site\.mjs\?v=1\.35-thought-edge-buffer/);
+  assert.match(v1Html, /\.\/styles\.css\?v=1\.35-thought-edge-buffer/);
+  assert.match(v1Html, /\.\/scripts\/render-site\.mjs\?v=1\.35-thought-edge-buffer/);
 });
 
 test("todo panel keeps extra items inside its own scroll area", async () => {
@@ -130,8 +137,11 @@ test("thought area is prepared as a bounded motion space", async () => {
 
   assert.match(siteStyles, /\.thought-space\s*{[^}]*position:\s*absolute/s);
   assert.match(siteStyles, /\.thought-space\s*{[^}]*overflow:\s*hidden/s);
+  assert.match(siteStyles, /\.thought-space\s*{[^}]*inset:\s*clamp\(42px,\s*5\.4vh,\s*64px\)[^}]*clamp\(18px,\s*2\.4vh,\s*34px\)[^}]*clamp\(245px,\s*20vw,\s*390px\)/s);
   assert.match(siteStyles, /\.thought-space \.thought-pill\s*{[^}]*will-change:\s*transform,\s*opacity/s);
   assert.match(script, /function toggleThoughtVisibility/);
+  assert.match(script, /THOUGHT_BOUND_PADDING\s*=\s*40/);
+  assert.match(script, /Math\.min\(THOUGHT_BOUND_PADDING,\s*Math\.max\(0,\s*\(axisSize - itemSize\) \/ 2\)\)/);
   assert.match(script, /window\.setTimeout/);
   assert.match(script, /stepThoughtPhysics\(items,\s*bounds,\s*dt\)/);
   assert.match(rootHtml, /class="thought-space" data-thoughts/);
