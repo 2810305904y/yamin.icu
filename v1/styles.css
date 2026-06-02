@@ -660,6 +660,11 @@ svg {
   padding: clamp(24px, 2.6vw, 48px);
 }
 
+.panel-thoughts .section-title-small {
+  z-index: 5;
+  transform: translateY(clamp(-18px, -1.8vh, -10px));
+}
+
 .panel-thoughts::before {
   content: "";
   position: absolute;
@@ -671,7 +676,7 @@ svg {
 .thought-space {
   position: absolute;
   z-index: 4;
-  inset: clamp(42px, 5.4vh, 64px) clamp(26px, 3.5vw, 74px) clamp(18px, 2.4vh, 34px) clamp(245px, 20vw, 390px);
+  inset: clamp(42px, 5.2vh, 58px) clamp(24px, 3vw, 58px) clamp(18px, 2.4vh, 34px) clamp(22px, 3.2vw, 58px);
   overflow: hidden;
   border-radius: 20px;
   pointer-events: none;
@@ -679,7 +684,7 @@ svg {
 
 .site-signature {
   position: absolute;
-  z-index: 3;
+  z-index: 5;
   left: clamp(28px, 3.2vw, 58px);
   bottom: clamp(26px, 3.1vh, 42px);
   display: grid;

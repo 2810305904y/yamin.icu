@@ -115,12 +115,12 @@ test("project cards keep a slightly slimmer desktop footprint", async () => {
 
   assert.match(siteStyles, /grid-template-columns:\s*minmax\(200px,\s*0\.94fr\)\s*minmax\(200px,\s*0\.94fr\)\s*minmax\(300px,\s*1\.4fr\)/);
   assert.doesNotMatch(siteStyles, /grid-template-columns:\s*minmax\(210px,\s*1fr\)\s*minmax\(210px,\s*1fr\)\s*minmax\(280px,\s*1\.28fr\)/);
-  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.36-mobile-script-fallback/);
-  assert.match(rootHtml, /\/v1\/scripts\/render-site\.mjs\?v=1\.36-mobile-script-fallback/);
+  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.37-thought-space-wide/);
+  assert.match(rootHtml, /\/v1\/scripts\/render-site\.mjs\?v=1\.37-thought-space-wide/);
   assert.match(rootHtml, /<script nomodule>/);
   assert.match(rootHtml, /window\.location\.replace\("\/v1\/"\)/);
-  assert.match(v1Html, /\.\/styles\.css\?v=1\.36-mobile-script-fallback/);
-  assert.match(v1Html, /\.\/scripts\/render-site\.mjs\?v=1\.36-mobile-script-fallback/);
+  assert.match(v1Html, /\.\/styles\.css\?v=1\.37-thought-space-wide/);
+  assert.match(v1Html, /\.\/scripts\/render-site\.mjs\?v=1\.37-thought-space-wide/);
 });
 
 test("todo panel keeps extra items inside its own scroll area", async () => {
@@ -139,7 +139,8 @@ test("thought area is prepared as a bounded motion space", async () => {
 
   assert.match(siteStyles, /\.thought-space\s*{[^}]*position:\s*absolute/s);
   assert.match(siteStyles, /\.thought-space\s*{[^}]*overflow:\s*hidden/s);
-  assert.match(siteStyles, /\.thought-space\s*{[^}]*inset:\s*clamp\(42px,\s*5\.4vh,\s*64px\)[^}]*clamp\(18px,\s*2\.4vh,\s*34px\)[^}]*clamp\(245px,\s*20vw,\s*390px\)/s);
+  assert.match(siteStyles, /\.panel-thoughts \.section-title-small\s*{[^}]*transform:\s*translateY\(clamp\(-18px,\s*-1\.8vh,\s*-10px\)\)/s);
+  assert.match(siteStyles, /\.thought-space\s*{[^}]*inset:\s*clamp\(42px,\s*5\.2vh,\s*58px\)[^}]*clamp\(24px,\s*3vw,\s*58px\)[^}]*clamp\(18px,\s*2\.4vh,\s*34px\)[^}]*clamp\(22px,\s*3\.2vw,\s*58px\)/s);
   assert.match(siteStyles, /\.thought-space \.thought-pill\s*{[^}]*will-change:\s*transform,\s*opacity/s);
   assert.match(script, /function toggleThoughtVisibility/);
   assert.match(script, /THOUGHT_BOUND_PADDING\s*=\s*40/);
