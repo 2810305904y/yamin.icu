@@ -671,7 +671,7 @@ svg {
 .thought-space {
   position: absolute;
   z-index: 4;
-  inset: clamp(76px, 9vh, 118px) clamp(30px, 4vw, 84px) clamp(34px, 5vh, 74px) clamp(300px, 23vw, 460px);
+  inset: clamp(42px, 5.4vh, 64px) clamp(26px, 3.5vw, 74px) clamp(18px, 2.4vh, 34px) clamp(245px, 20vw, 390px);
   overflow: hidden;
   border-radius: 20px;
   pointer-events: none;

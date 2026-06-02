@@ -79,6 +79,19 @@ test("homepage loads API site data when available and falls back to bundled data
   assert.equal(fallback.identity.title, siteData.identity.title);
 });
 
+test("site title and signature copy use the current wording", async () => {
+  const rootHtml = await readFile("index.html", "utf8");
+  const v1Html = await readFile("v1/index.html", "utf8");
+
+  assert.equal(siteData.identity.subtitle, "一张不太正经的项目地图");
+  assert.match(rootHtml, /<title>鸦珉\.icu - 项目地图<\/title>/);
+  assert.match(v1Html, /<title>鸦珉\.icu - 项目地图<\/title>/);
+  assert.doesNotMatch(rootHtml, /项目地图 V1/);
+  assert.doesNotMatch(v1Html, /项目地图 V1/);
+  assert.doesNotMatch(rootHtml, /稍微不太正经/);
+  assert.doesNotMatch(v1Html, /稍微不太正经/);
+});
+
 test("renderers output the visible homepage content", () => {
   const projectHtml = renderProjects(siteData.projects);
   const todoHtml = renderTodos(siteData.todos);

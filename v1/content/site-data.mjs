@@ -1,7 +1,7 @@
 export const siteData = {
   identity: {
     title: "鸦珉.icu",
-    subtitle: "一张稍微不太正经的项目地图",
+    subtitle: "一张不太正经的项目地图",
   },
   projects: [
     {

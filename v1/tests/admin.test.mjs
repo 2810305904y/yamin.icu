@@ -115,10 +115,10 @@ test("project cards keep a slightly slimmer desktop footprint", async () => {
 
   assert.match(siteStyles, /grid-template-columns:\s*minmax\(200px,\s*0\.94fr\)\s*minmax\(200px,\s*0\.94fr\)\s*minmax\(300px,\s*1\.4fr\)/);
   assert.doesNotMatch(siteStyles, /grid-template-columns:\s*minmax\(210px,\s*1fr\)\s*minmax\(210px,\s*1fr\)\s*minmax\(280px,\s*1\.28fr\)/);
-  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.33-random-thought-colors/);
-  assert.match(rootHtml, /\/v1\/scripts\/render-site\.mjs\?v=1\.33-random-thought-colors/);
-  assert.match(v1Html, /\.\/styles\.css\?v=1\.33-random-thought-colors/);
-  assert.match(v1Html, /\.\/scripts\/render-site\.mjs\?v=1\.33-random-thought-colors/);
+  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.34-thought-space-copy/);
+  assert.match(rootHtml, /\/v1\/scripts\/render-site\.mjs\?v=1\.34-thought-space-copy/);
+  assert.match(v1Html, /\.\/styles\.css\?v=1\.34-thought-space-copy/);
+  assert.match(v1Html, /\.\/scripts\/render-site\.mjs\?v=1\.34-thought-space-copy/);
 });
 
 test("todo panel keeps extra items inside its own scroll area", async () => {
@@ -137,6 +137,7 @@ test("thought area is prepared as a bounded motion space", async () => {
 
   assert.match(siteStyles, /\.thought-space\s*{[^}]*position:\s*absolute/s);
   assert.match(siteStyles, /\.thought-space\s*{[^}]*overflow:\s*hidden/s);
+  assert.match(siteStyles, /\.thought-space\s*{[^}]*inset:\s*clamp\(42px,\s*5\.4vh,\s*64px\)[^}]*clamp\(18px,\s*2\.4vh,\s*34px\)[^}]*clamp\(245px,\s*20vw,\s*390px\)/s);
   assert.match(siteStyles, /\.thought-space \.thought-pill\s*{[^}]*will-change:\s*transform,\s*opacity/s);
   assert.match(script, /function toggleThoughtVisibility/);
   assert.match(script, /window\.setTimeout/);
