@@ -655,18 +655,6 @@ svg {
   background: currentColor;
 }
 
-.todo-tone-white .todo-track {
-  background: rgba(255, 255, 255, 0.62);
-  box-shadow: inset 0 0 0 1px rgba(100, 116, 139, 0.18);
-}
-
-.todo-tone-white .todo-track span {
-  background: #ffffff;
-  box-shadow:
-    0 0 0 1px rgba(100, 116, 139, 0.22),
-    0 0 8px rgba(255, 255, 255, 0.72);
-}
-
 .panel-thoughts {
   overflow: hidden;
   padding: clamp(24px, 2.6vw, 48px);
