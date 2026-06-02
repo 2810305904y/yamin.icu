@@ -233,7 +233,7 @@ svg {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: minmax(210px, 1fr) minmax(210px, 1fr) minmax(280px, 1.28fr);
+  grid-template-columns: minmax(200px, 0.94fr) minmax(200px, 0.94fr) minmax(300px, 1.4fr);
   grid-template-rows: repeat(3, minmax(0, 1fr));
   gap: clamp(18px, 2vw, 34px);
   height: min(82%, calc(100% - clamp(58px, 6.4vh, 88px)));

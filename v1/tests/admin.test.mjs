@@ -101,17 +101,24 @@ test("desktop map frame keeps a balanced wide layout while scaling on short scre
   assert.doesNotMatch(siteStyles, /height:\s*min\(calc\(100vh - 28px\),\s*calc\(\(100vw - 28px\) \* 0\.5625\)\)/);
 });
 
-test("todo panel keeps extra items inside its own scroll area", async () => {
+test("project cards keep a slightly slimmer desktop footprint", async () => {
   const siteStyles = await readFile("v1/styles.css", "utf8");
   const rootHtml = await readFile("index.html", "utf8");
   const v1Html = await readFile("v1/index.html", "utf8");
+
+  assert.match(siteStyles, /grid-template-columns:\s*minmax\(200px,\s*0\.94fr\)\s*minmax\(200px,\s*0\.94fr\)\s*minmax\(300px,\s*1\.4fr\)/);
+  assert.doesNotMatch(siteStyles, /grid-template-columns:\s*minmax\(210px,\s*1fr\)\s*minmax\(210px,\s*1fr\)\s*minmax\(280px,\s*1\.28fr\)/);
+  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.29-project-card-trim/);
+  assert.match(v1Html, /\.\/styles\.css\?v=1\.29-project-card-trim/);
+});
+
+test("todo panel keeps extra items inside its own scroll area", async () => {
+  const siteStyles = await readFile("v1/styles.css", "utf8");
 
   assert.match(siteStyles, /\.panel-todos\s*{[^}]*grid-template-rows:\s*auto minmax\(0,\s*1fr\)/s);
   assert.match(siteStyles, /\.panel-todos\s*{[^}]*overflow:\s*hidden/s);
   assert.match(siteStyles, /\.panel-todos \.todo-list\s*{[^}]*overflow-y:\s*auto/s);
   assert.match(siteStyles, /\.todo-row\s*{[^}]*min-height:\s*clamp\(48px,\s*5vh,\s*66px\)/s);
-  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.28-todo-scroll/);
-  assert.match(v1Html, /\.\/styles\.css\?v=1\.28-todo-scroll/);
 });
 
 test("preview server routes root and admin pages", async () => {
