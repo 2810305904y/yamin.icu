@@ -793,13 +793,14 @@ svg {
   display: grid;
   gap: 10px;
   margin-top: 0;
+  padding-right: clamp(2px, 0.4vw, 8px);
 }
 
 .social-list a {
-  grid-template-columns: 28px minmax(0, 1fr) auto;
-  gap: 12px;
-  min-height: 43px;
-  padding: 8px 12px;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  gap: 13px;
+  min-height: clamp(48px, 5vh, 66px);
+  padding: clamp(10px, 1.1vh, 13px) 16px;
   border-radius: 14px;
   color: var(--ink);
   text-decoration: none;
@@ -816,9 +817,9 @@ svg {
 
 .social-mark {
   display: inline-grid;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
+  width: 13px;
+  height: 13px;
+  border-radius: 999px;
   box-shadow: 1px 2px 5px rgba(15, 23, 42, 0.12);
 }
 

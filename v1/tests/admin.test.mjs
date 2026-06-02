@@ -115,12 +115,24 @@ test("project cards keep a slightly slimmer desktop footprint", async () => {
 
   assert.match(siteStyles, /grid-template-columns:\s*minmax\(200px,\s*0\.94fr\)\s*minmax\(200px,\s*0\.94fr\)\s*minmax\(300px,\s*1\.4fr\)/);
   assert.doesNotMatch(siteStyles, /grid-template-columns:\s*minmax\(210px,\s*1fr\)\s*minmax\(210px,\s*1fr\)\s*minmax\(280px,\s*1\.28fr\)/);
-  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.39-thought-space-max-vertical/);
-  assert.match(rootHtml, /\/v1\/scripts\/render-site\.mjs\?v=1\.39-thought-space-max-vertical/);
+  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.3\.10-social-width/);
+  assert.match(rootHtml, /\/v1\/scripts\/render-site\.mjs\?v=1\.3\.10-social-width/);
   assert.match(rootHtml, /<script nomodule>/);
   assert.match(rootHtml, /window\.location\.replace\("\/v1\/"\)/);
-  assert.match(v1Html, /\.\/styles\.css\?v=1\.39-thought-space-max-vertical/);
-  assert.match(v1Html, /\.\/scripts\/render-site\.mjs\?v=1\.39-thought-space-max-vertical/);
+  assert.match(v1Html, /\.\/styles\.css\?v=1\.3\.10-social-width/);
+  assert.match(v1Html, /\.\/scripts\/render-site\.mjs\?v=1\.3\.10-social-width/);
+});
+
+test("version naming uses the new three-part small release format", async () => {
+  const readme = await readFile("README.md", "utf8");
+  const adminHtml = await readFile("admin/index.html", "utf8");
+  const namingRules = await readFile("项目进度/2026-06-01_版本命名规则.md", "utf8");
+
+  assert.match(readme, /当前阶段：V1\.3/);
+  assert.match(readme, /当前小版本：V1\.3\.10/);
+  assert.match(adminHtml, /<p class="admin-kicker">V1\.3\.10<\/p>/);
+  assert.match(namingRules, /V1\.3\.10\s*->\s*V1\.3 阶段内的第 10 次小更新/);
+  assert.match(namingRules, /三段式/);
 });
 
 test("todo panel keeps extra items inside its own scroll area", async () => {
@@ -130,6 +142,16 @@ test("todo panel keeps extra items inside its own scroll area", async () => {
   assert.match(siteStyles, /\.panel-todos\s*{[^}]*overflow:\s*hidden/s);
   assert.match(siteStyles, /\.panel-todos \.todo-list\s*{[^}]*overflow-y:\s*auto/s);
   assert.match(siteStyles, /\.todo-row\s*{[^}]*min-height:\s*clamp\(48px,\s*5vh,\s*66px\)/s);
+});
+
+test("social links match todo row width rhythm", async () => {
+  const siteStyles = await readFile("v1/styles.css", "utf8");
+
+  assert.match(siteStyles, /\.social-list a\s*{[^}]*grid-template-columns:\s*14px minmax\(0,\s*1fr\) auto/s);
+  assert.match(siteStyles, /\.social-list\s*{[^}]*padding-right:\s*clamp\(2px,\s*0\.4vw,\s*8px\)/s);
+  assert.match(siteStyles, /\.social-list a\s*{[^}]*padding:\s*clamp\(10px,\s*1\.1vh,\s*13px\)\s*16px/s);
+  assert.match(siteStyles, /\.social-mark\s*{[^}]*width:\s*13px/s);
+  assert.match(siteStyles, /\.social-mark\s*{[^}]*height:\s*13px/s);
 });
 
 test("thought area is prepared as a bounded motion space", async () => {
