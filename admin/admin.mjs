@@ -29,6 +29,12 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+function prepareSiteDataForSave(value) {
+  const data = clone(value);
+  data.thoughts = (data.thoughts || []).map(({ tone, ...thought }) => thought);
+  return data;
+}
+
 function loadDraft() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -39,7 +45,7 @@ function loadDraft() {
 }
 
 function saveDraft() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(prepareSiteDataForSave(state)));
   setStatus("草稿已保存在当前浏览器。");
 }
 
@@ -111,7 +117,6 @@ function getDefaults(section) {
       order: nextOrder(section),
       visible: true,
       text: "一个还没想清楚的念头",
-      tone: "blue",
     };
   }
 
@@ -360,7 +365,7 @@ async function putOnline(token = "") {
   const response = await fetch("/api/site-data", {
     method: "PUT",
     headers,
-    body: JSON.stringify(state),
+    body: JSON.stringify(prepareSiteDataForSave(state)),
   });
   const payload = await response.json().catch(() => ({}));
   return { response, payload };
@@ -406,7 +411,7 @@ async function restoreOnlineContent() {
 }
 
 function downloadDataFile() {
-  const text = `export const siteData = ${JSON.stringify(state, null, 2)};\n`;
+  const text = `export const siteData = ${JSON.stringify(prepareSiteDataForSave(state), null, 2)};\n`;
   const blob = new Blob([text], { type: "text/javascript;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");

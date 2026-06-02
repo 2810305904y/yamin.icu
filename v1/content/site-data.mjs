@@ -110,28 +110,24 @@ export const siteData = {
       order: 10,
       visible: true,
       text: "不确定为什么存在",
-      tone: "green",
     },
     {
       id: "hatching",
       order: 20,
       visible: true,
       text: "正在孵化",
-      tone: "blue",
     },
     {
       id: "not-company",
       order: 30,
       visible: true,
       text: "不是公司官网",
-      tone: "purple",
     },
     {
       id: "leave-it",
       order: 40,
       visible: true,
       text: "先放着",
-      tone: "orange",
     },
   ],
   channels: [

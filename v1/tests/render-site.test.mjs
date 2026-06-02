@@ -5,6 +5,8 @@ import { readFile } from "node:fs/promises";
 import { siteData } from "../content/site-data.mjs";
 import {
   applyBackgroundLabMode,
+  createSeededRandom,
+  createThoughtToneSequence,
   escapeHtml,
   getVisibleSortedItems,
   loadLiveSiteData,
@@ -99,6 +101,25 @@ test("thought pills render as motion-ready collision bodies", () => {
   assert.match(thoughtHtml, /data-thought-pill/);
   assert.match(thoughtHtml, /data-thought-index="0"/);
   assert.match(thoughtHtml, /thought-pill pill-/);
+});
+
+test("thought colors are automatically balanced instead of following stored tones", () => {
+  const thoughtHtml = renderThoughts(
+    Array.from({ length: 8 }, (_, index) => ({
+      text: `idea ${index}`,
+      order: index * 10,
+      visible: true,
+      tone: "blue",
+    })),
+  );
+  const sequence = createThoughtToneSequence(8, createSeededRandom(17));
+
+  assert.equal(new Set(sequence).size, 8);
+  assert.equal(siteData.thoughts.every((thought) => !("tone" in thought)), true);
+  assert.match(thoughtHtml, /pill-green/);
+  assert.match(thoughtHtml, /pill-orange/);
+  assert.match(thoughtHtml, /pill-purple/);
+  assert.equal((thoughtHtml.match(/pill-blue/g) || []).length, 1);
 });
 
 test("thought collision physics separates active labels", () => {

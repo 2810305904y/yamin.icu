@@ -38,6 +38,7 @@ const iconMap = {
 
 const thoughtSpaceCleanups = new WeakMap();
 const THOUGHT_BOUND_PADDING = 8;
+const thoughtTonePalette = ["green", "orange", "purple", "pink", "red", "yellow", "cyan", "blue"];
 
 export function escapeHtml(value) {
   return String(value ?? "")
@@ -66,6 +67,37 @@ export function createSeededRandom(seed) {
 
 function randomBetween(random, min, max) {
   return min + (max - min) * random();
+}
+
+export function createThoughtToneSequence(count, random = Math.random) {
+  const tones = [];
+  while (tones.length < count) {
+    const batch = [...thoughtTonePalette];
+    for (let index = batch.length - 1; index > 0; index -= 1) {
+      const swapIndex = Math.floor(random() * (index + 1));
+      [batch[index], batch[swapIndex]] = [batch[swapIndex], batch[index]];
+    }
+    tones.push(...batch);
+  }
+  return tones.slice(0, count);
+}
+
+function createThoughtTonePicker(random) {
+  let tones = [];
+  return () => {
+    if (!tones.length) {
+      tones = createThoughtToneSequence(thoughtTonePalette.length, random);
+    }
+    return tones.shift();
+  };
+}
+
+function applyThoughtTone(element, tone) {
+  [...element.classList]
+    .filter((className) => className.startsWith("pill-"))
+    .forEach((className) => element.classList.remove(className));
+  element.classList.add(`pill-${tone}`);
+  element.dataset.thoughtTone = tone;
 }
 
 function thoughtSize(item) {
@@ -252,7 +284,7 @@ export function renderTodos(todos) {
 export function renderThoughts(thoughts) {
   return getVisibleSortedItems(thoughts)
     .map((thought, index) => {
-      const tone = escapeHtml(thought.tone || "blue");
+      const tone = escapeHtml(thoughtTonePalette[index % thoughtTonePalette.length]);
       return `<span class="thought-pill pill-${tone}" data-thought-pill data-thought-index="${index}">${escapeHtml(thought.text)}</span>`;
     })
     .join("");
@@ -297,9 +329,10 @@ function resetThoughtMotion(item, random, bounds) {
   item.vy = randomBetween(random, 12, 38) * (random() > 0.5 ? 1 : -1);
 }
 
-function setThoughtActive(item, active, random, bounds) {
+function setThoughtActive(item, active, random, bounds, pickThoughtTone) {
   item.active = active;
   if (active) {
+    applyThoughtTone(item.element, pickThoughtTone());
     resetThoughtMotion(item, random, bounds);
   }
   applyThoughtStyle(item);
@@ -309,17 +342,17 @@ function pickRandomItem(random, items) {
   return items[Math.floor(random() * items.length)];
 }
 
-function toggleThoughtVisibility(items, random, bounds, minVisible, maxVisible) {
+function toggleThoughtVisibility(items, random, bounds, minVisible, maxVisible, pickThoughtTone) {
   const activeItems = items.filter((item) => item.active);
   const inactiveItems = items.filter((item) => !item.active);
 
   if (inactiveItems.length && (activeItems.length < minVisible || (activeItems.length < maxVisible && random() > 0.48))) {
-    setThoughtActive(pickRandomItem(random, inactiveItems), true, random, bounds);
+    setThoughtActive(pickRandomItem(random, inactiveItems), true, random, bounds, pickThoughtTone);
     return;
   }
 
   if (activeItems.length > minVisible) {
-    setThoughtActive(pickRandomItem(random, activeItems), false, random, bounds);
+    setThoughtActive(pickRandomItem(random, activeItems), false, random, bounds, pickThoughtTone);
   }
 }
 
@@ -336,8 +369,9 @@ export function initThoughtSpace(container) {
 
   const seed = elements.reduce((total, element, index) => {
     return total + (index + 1) * String(element.textContent || "").length * 97;
-  }, 131);
+  }, 131 + Math.floor(Math.random() * 1000003));
   const random = createSeededRandom(seed);
+  const pickThoughtTone = createThoughtTonePicker(random);
   const motionAllowed = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const minVisible = Math.min(elements.length, Math.max(2, Math.floor(elements.length * 0.56)));
   const maxVisible = Math.min(elements.length, Math.max(minVisible, 5));
@@ -362,6 +396,7 @@ export function initThoughtSpace(container) {
     nextScaleAt: 0,
   }));
 
+  items.forEach((item) => applyThoughtTone(item.element, pickThoughtTone()));
   items.forEach((item) => resetThoughtMotion(item, random, bounds));
   while (items.filter((item) => item.active).length < minVisible) {
     const inactive = items.find((item) => !item.active);
@@ -374,7 +409,7 @@ export function initThoughtSpace(container) {
     if (!motionAllowed || items.length < 2) return;
     visibilityTimer = window.setTimeout(() => {
       bounds = readThoughtBounds(container);
-      toggleThoughtVisibility(items, random, bounds, minVisible, maxVisible);
+      toggleThoughtVisibility(items, random, bounds, minVisible, maxVisible, pickThoughtTone);
       scheduleVisibilityToggle();
     }, randomBetween(random, 3000, 5000));
   }
