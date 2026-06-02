@@ -259,14 +259,15 @@ test("todo tones support expanded color options", async () => {
   assert.match(script, /"black", "white"/);
 });
 
-test("root homepage renders directly without redirecting to v1", async () => {
+test("root homepage renders directly and keeps a legacy module fallback", async () => {
   const rootHtml = await readFile("index.html", "utf8");
 
   assert.doesNotMatch(rootHtml, /http-equiv="refresh"/i);
-  assert.doesNotMatch(rootHtml, /window\.location/);
   assert.doesNotMatch(rootHtml, /url=\/v1/i);
   assert.match(rootHtml, /href="\/"/);
   assert.match(rootHtml, /href="\/v1\/styles\.css(?:\?[^"]+)?"/);
   assert.match(rootHtml, /src="\/v1\/scripts\/render-site\.mjs(?:\?[^"]+)?"/);
+  assert.match(rootHtml, /<script nomodule>/);
+  assert.match(rootHtml, /window\.location\.replace\("\/v1\/"\)/);
   assert.match(rootHtml, /data-projects/);
 });

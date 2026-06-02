@@ -35,7 +35,7 @@ test("admin editor supports local draft and data export workflow", async () => {
 });
 
 test("admin preview follows current editing section and hides thought color editing", async () => {
-  const script = await readFile("admin/admin.mjs", "utf8");
+  const script = (await readFile("admin/admin.mjs", "utf8")).replaceAll("\r\n", "\n");
   const fieldMarkupStart = script.indexOf("function fieldMarkup");
   const defaultsStart = script.indexOf('if (section === "thoughts")');
   const defaultsEnd = script.indexOf('return {\n    id: makeId("channel")', defaultsStart);
@@ -115,10 +115,12 @@ test("project cards keep a slightly slimmer desktop footprint", async () => {
 
   assert.match(siteStyles, /grid-template-columns:\s*minmax\(200px,\s*0\.94fr\)\s*minmax\(200px,\s*0\.94fr\)\s*minmax\(300px,\s*1\.4fr\)/);
   assert.doesNotMatch(siteStyles, /grid-template-columns:\s*minmax\(210px,\s*1fr\)\s*minmax\(210px,\s*1fr\)\s*minmax\(280px,\s*1\.28fr\)/);
-  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.35-thought-edge-buffer/);
-  assert.match(rootHtml, /\/v1\/scripts\/render-site\.mjs\?v=1\.35-thought-edge-buffer/);
-  assert.match(v1Html, /\.\/styles\.css\?v=1\.35-thought-edge-buffer/);
-  assert.match(v1Html, /\.\/scripts\/render-site\.mjs\?v=1\.35-thought-edge-buffer/);
+  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.36-mobile-script-fallback/);
+  assert.match(rootHtml, /\/v1\/scripts\/render-site\.mjs\?v=1\.36-mobile-script-fallback/);
+  assert.match(rootHtml, /<script nomodule>/);
+  assert.match(rootHtml, /window\.location\.replace\("\/v1\/"\)/);
+  assert.match(v1Html, /\.\/styles\.css\?v=1\.36-mobile-script-fallback/);
+  assert.match(v1Html, /\.\/scripts\/render-site\.mjs\?v=1\.36-mobile-script-fallback/);
 });
 
 test("todo panel keeps extra items inside its own scroll area", async () => {
@@ -142,6 +144,8 @@ test("thought area is prepared as a bounded motion space", async () => {
   assert.match(script, /function toggleThoughtVisibility/);
   assert.match(script, /THOUGHT_BOUND_PADDING\s*=\s*40/);
   assert.match(script, /Math\.min\(THOUGHT_BOUND_PADDING,\s*Math\.max\(0,\s*\(axisSize - itemSize\) \/ 2\)\)/);
+  assert.ok(script.indexOf("mountLiveSite();") < script.indexOf("initCloudCanvasBackground();"));
+  assert.doesNotMatch(script, /replaceAll|\?\?|\?\./);
   assert.match(script, /window\.setTimeout/);
   assert.match(script, /stepThoughtPhysics\(items,\s*bounds,\s*dt\)/);
   assert.match(rootHtml, /class="thought-space" data-thoughts/);
