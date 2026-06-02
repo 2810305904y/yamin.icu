@@ -41,18 +41,18 @@ const THOUGHT_BOUND_PADDING = 40;
 const thoughtTonePalette = ["green", "orange", "purple", "pink", "red", "yellow", "cyan", "blue"];
 
 export function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 export function getVisibleSortedItems(items) {
   return [...items]
     .filter((item) => item.visible !== false)
-    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    .sort((a, b) => (a.order == null ? 0 : a.order) - (b.order == null ? 0 : b.order));
 }
 
 export function createSeededRandom(seed) {
@@ -103,7 +103,7 @@ function applyThoughtTone(element, tone) {
 function thoughtSize(item) {
   const baseWidth = Math.max(1, item.width * item.scale);
   const baseHeight = Math.max(1, item.height * item.scale);
-  const rotation = ((item.rotation ?? 0) * Math.PI) / 180;
+  const rotation = ((item.rotation == null ? 0 : item.rotation) * Math.PI) / 180;
   const cos = Math.abs(Math.cos(rotation));
   const sin = Math.abs(Math.sin(rotation));
   const width = baseWidth * cos + baseHeight * sin;
@@ -171,7 +171,7 @@ export function stepThoughtPhysics(items, bounds, dt) {
     const size = thoughtSize(item);
     item.x += item.vx * dt;
     item.y += item.vy * dt;
-    item.rotation = (item.rotation ?? 0) + item.rotationSpeed * dt;
+    item.rotation = (item.rotation == null ? 0 : item.rotation) + item.rotationSpeed * dt;
 
     const xRange = thoughtAxisRange(bounds.width, size.width);
     const yRange = thoughtAxisRange(bounds.height, size.height);
@@ -205,7 +205,7 @@ export function stepThoughtPhysics(items, bounds, dt) {
 }
 
 function safeHref(url) {
-  const value = String(url ?? "").trim();
+  const value = String(url == null ? "" : url).trim();
   if (value.startsWith("https://") || value.startsWith("http://")) {
     return value;
   }
@@ -213,7 +213,7 @@ function safeHref(url) {
 }
 
 function renderIcon(name, className) {
-  return `<span class="${className}" aria-hidden="true">${iconMap[name] ?? iconMap.cube}</span>`;
+  return `<span class="${className}" aria-hidden="true">${iconMap[name] || iconMap.cube}</span>`;
 }
 
 function renderStatus(item) {
@@ -268,7 +268,7 @@ export function renderProjects(projects) {
 export function renderTodos(todos) {
   return getVisibleSortedItems(todos)
     .map((todo) => {
-      const progress = Math.max(0, Math.min(100, Number(todo.progress ?? 0)));
+      const progress = Math.max(0, Math.min(100, Number(todo.progress == null ? 0 : todo.progress)));
       const tone = escapeHtml(todo.tone || "blue");
       return `
         <div class="todo-row todo-tone-${tone}">
@@ -452,14 +452,14 @@ export function initThoughtSpace(container) {
           });
         });
 
-  resizeObserver?.observe(container);
+  if (resizeObserver) resizeObserver.observe(container);
   draw();
   scheduleVisibilityToggle();
 
   const cleanup = () => {
     if (frameId) window.cancelAnimationFrame(frameId);
     if (visibilityTimer) window.clearTimeout(visibilityTimer);
-    resizeObserver?.disconnect();
+    if (resizeObserver) resizeObserver.disconnect();
   };
   thoughtSpaceCleanups.set(container, cleanup);
   return cleanup;
@@ -520,13 +520,14 @@ export async function loadLiveSiteData(fetchFn = fetch) {
     if (!response.ok) return siteData;
 
     const payload = await response.json();
-    return payload?.data || siteData;
-  } catch {
+    return (payload && payload.data) || siteData;
+  } catch (error) {
     return siteData;
   }
 }
 
 export async function mountLiveSite() {
+  mountSite(siteData);
   mountSite(await loadLiveSiteData());
 }
 
@@ -766,8 +767,12 @@ export function initCloudCanvasBackground() {
 
 if (typeof document !== "undefined") {
   applyBackgroundLabMode();
-  initCloudCanvasBackground();
   if (document.querySelector("[data-projects]")) {
     mountLiveSite();
+  }
+  try {
+    initCloudCanvasBackground();
+  } catch (error) {
+    document.body.classList.remove("canvas-clouds-ready");
   }
 }
