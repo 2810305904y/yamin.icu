@@ -40,14 +40,31 @@ test("admin preview follows current editing section and hides thought color edit
   const thoughtBlockStart = script.indexOf('if (section === "thoughts")', fieldMarkupStart);
   const channelBlockStart = script.indexOf('return `\n    ${textInput("名称"', thoughtBlockStart);
   const thoughtBlock = script.slice(thoughtBlockStart, channelBlockStart);
+  const renderEditorStart = script.indexOf("function renderEditor");
+  const renderEditorEnd = script.indexOf("function renderPreview", renderEditorStart);
+  const renderEditorBlock = script.slice(renderEditorStart, renderEditorEnd);
   const styles = await readFile("admin/styles.css", "utf8");
   const siteStyles = await readFile("v1/styles.css", "utf8");
 
   assert.match(script, /section\.style\.order/);
   assert.match(styles, /\.preview-panel\s*{[^}]*position:\s*sticky/s);
+  assert.match(renderEditorBlock, /activeSection === "thoughts"\s*\?\s*""/);
+  assert.match(styles, /\.thought-editor-card\s*{[^}]*border-radius:\s*999px/s);
   assert.doesNotMatch(thoughtBlock, /selectInput\("颜色", "tone"/);
   assert.match(siteStyles, /\.todo-pink/);
   assert.match(siteStyles, /\.todo-red/);
+});
+
+test("admin reorders items by writing fresh order values", async () => {
+  const script = await readFile("admin/admin.mjs", "utf8");
+  const moveStart = script.indexOf("function moveItem");
+  const moveEnd = script.indexOf("function fieldMarkup", moveStart);
+  const moveBlock = script.slice(moveStart, moveEnd);
+
+  assert.match(moveBlock, /\[items\[index\], items\[nextIndex\]\]/);
+  assert.match(moveBlock, /state\[section\]\s*=\s*items\.map/);
+  assert.match(moveBlock, /order:\s*\(itemIndex \+ 1\) \* 10/);
+  assert.doesNotMatch(moveBlock, /normalizeOrder\(section\)/);
 });
 
 test("admin shell sits above the shared cloud background", async () => {
@@ -58,7 +75,8 @@ test("admin shell sits above the shared cloud background", async () => {
   assert.match(styles, /\.admin-shell\s*{[^}]*z-index:\s*1/s);
   assert.match(styles, /\.admin-shell\s*{[^}]*background:\s*rgba\(255, 255, 255, 0\.94\)/s);
   assert.match(styles, /\.editor-panel,[\s\S]*?\.preview-panel\s*{[^}]*background:\s*rgba\(255, 255, 255, 0\.93\)/s);
-  assert.match(html, /\/admin\/styles\.css\?v=1\.26-admin-cloud-shield/);
+  assert.match(html, /\/admin\/styles\.css\?v=1\.27-admin-editor-controls/);
+  assert.match(html, /\/admin\/admin\.mjs\?v=1\.27-admin-editor-controls/);
 });
 
 test("homepage cloud layer sits below the translucent map frame", async () => {

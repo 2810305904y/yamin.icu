@@ -520,32 +520,90 @@ svg {
   box-shadow: 1px 2px 5px rgba(15, 23, 42, 0.14);
 }
 
+.todo-tone-green {
+  color: #22c55e;
+}
+
 .todo-green {
   background: #22c55e;
+}
+
+.todo-tone-orange {
+  color: #f59e0b;
 }
 
 .todo-orange {
   background: #f59e0b;
 }
 
+.todo-tone-blue {
+  color: #3b82f6;
+}
+
 .todo-blue {
   background: #3b82f6;
+}
+
+.todo-tone-purple {
+  color: #8b5cf6;
 }
 
 .todo-purple {
   background: #8b5cf6;
 }
 
+.todo-tone-pink {
+  color: #ec4899;
+}
+
 .todo-pink {
   background: #ec4899;
 }
 
+.todo-tone-red {
+  color: #ff0000;
+}
+
 .todo-red {
-  background: #ef4444;
+  background: #ff0000;
+}
+
+.todo-tone-yellow {
+  color: #facc15;
+}
+
+.todo-yellow {
+  background: #facc15;
+}
+
+.todo-tone-cyan {
+  color: #06b6d4;
+}
+
+.todo-cyan {
+  background: #06b6d4;
+}
+
+.todo-tone-black {
+  color: #050505;
+}
+
+.todo-black {
+  background: #050505;
+}
+
+.todo-tone-white {
+  color: #ffffff;
+}
+
+.todo-white {
+  border: 1px solid rgba(15, 23, 42, 0.28);
+  background: #ffffff;
 }
 
 .todo-text {
   min-width: 0;
+  color: var(--ink);
   font-size: clamp(14px, 1vw, 18px);
   font-weight: 760;
   white-space: nowrap;
@@ -566,7 +624,10 @@ svg {
   height: 100%;
   border-radius: inherit;
   background: currentColor;
-  color: var(--blue-500);
+}
+
+.todo-tone-white .todo-track {
+  background: rgba(15, 23, 42, 0.16);
 }
 
 .panel-thoughts {
@@ -697,12 +758,37 @@ svg {
   background: linear-gradient(145deg, #60a5fa, #2563eb);
 }
 
+.social-orange {
+  background: linear-gradient(145deg, #fbbf24, #f59e0b);
+}
+
+.social-purple {
+  background: linear-gradient(145deg, #a78bfa, #8b5cf6);
+}
+
 .social-red {
-  background: linear-gradient(145deg, #fb7185, #ef4444);
+  background: linear-gradient(145deg, #ff3b3b, #ff0000);
 }
 
 .social-pink {
   background: linear-gradient(145deg, #f472b6, #ec4899);
+}
+
+.social-yellow {
+  background: linear-gradient(145deg, #fde047, #facc15);
+}
+
+.social-cyan {
+  background: linear-gradient(145deg, #67e8f9, #06b6d4);
+}
+
+.social-black {
+  background: linear-gradient(145deg, #404040, #050505);
+}
+
+.social-white {
+  border: 1px solid rgba(15, 23, 42, 0.24);
+  background: linear-gradient(145deg, #ffffff, #f8fafc);
 }
 
 @keyframes cloud-image-drift-left {

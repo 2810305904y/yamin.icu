@@ -149,6 +149,24 @@ test("planned tools move from project cards into todo list", () => {
   assert.match(todoHtml, /width: 0%/);
 });
 
+test("todo tones support expanded color options", async () => {
+  const todoHtml = renderTodos([
+    { title: "red item", order: 10, visible: true, tone: "red", progress: 35 },
+    { title: "white item", order: 20, visible: true, tone: "white", progress: 55 },
+    { title: "black item", order: 30, visible: true, tone: "black", progress: 75 },
+  ]);
+  const styles = await readFile("v1/styles.css", "utf8");
+  const script = await readFile("admin/admin.mjs", "utf8");
+
+  assert.match(todoHtml, /todo-row todo-tone-red/);
+  assert.match(todoHtml, /todo-dot todo-white/);
+  assert.match(todoHtml, /width: 75%/);
+  assert.match(styles, /\.todo-red\s*{[^}]*#ff0000/s);
+  assert.match(styles, /\.todo-black/);
+  assert.match(styles, /\.todo-white/);
+  assert.match(script, /"black", "white"/);
+});
+
 test("root homepage renders directly without redirecting to v1", async () => {
   const rootHtml = await readFile("index.html", "utf8");
 

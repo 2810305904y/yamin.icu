@@ -166,6 +166,14 @@ button {
   background: rgba(255, 255, 255, 0.96);
 }
 
+.thought-editor-card {
+  grid-template-columns: minmax(140px, 1fr) auto auto;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 10px 12px;
+  border-radius: 999px;
+}
+
 .editor-card-header {
   display: flex;
   align-items: center;
@@ -196,6 +204,43 @@ button {
   color: #fff;
   font-weight: 850;
   background: linear-gradient(145deg, #60a5fa, #2563eb);
+}
+
+.thought-editor-card .editor-card-header,
+.thought-editor-card .editor-card-actions {
+  display: contents;
+}
+
+.thought-editor-card .editor-card-header div {
+  display: none;
+}
+
+.thought-editor-card .field {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.thought-editor-card .field span {
+  display: none;
+}
+
+.thought-editor-card input {
+  min-height: 34px;
+  padding: 7px 14px;
+  border-radius: 999px;
+}
+
+.thought-editor-card .visible-toggle {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: 12px;
+}
+
+.thought-editor-card .danger-button {
+  grid-column: 3;
+  grid-row: 1;
+  min-height: 34px;
+  padding: 0 12px;
 }
 
 .visible-toggle {

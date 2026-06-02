@@ -18,7 +18,7 @@ const sectionMeta = {
 };
 
 const iconOptions = ["coffee", "leaf", "video", "phone", "cube"];
-const toneOptions = ["blue", "green", "orange", "purple", "pink", "red"];
+const toneOptions = ["blue", "green", "orange", "purple", "pink", "red", "yellow", "cyan", "black", "white"];
 const statusToneOptions = ["live", "building", "plan", "quiet"];
 const variantOptions = ["large", "wide"];
 
@@ -152,9 +152,12 @@ function moveItem(section, id, direction) {
   if (index < 0 || nextIndex < 0 || nextIndex >= items.length) return;
 
   [items[index], items[nextIndex]] = [items[nextIndex], items[index]];
-  state[section] = items;
-  normalizeOrder(section);
+  state[section] = items.map((item, itemIndex) => ({
+    ...item,
+    order: (itemIndex + 1) * 10,
+  }));
   render();
+  setStatus("排序已更新，记得保存到线上。");
 }
 
 function fieldMarkup(item, section) {
@@ -262,8 +265,16 @@ function renderEditor() {
 
   target.innerHTML = items
     .map((item, index) => {
+      const compactClass = activeSection === "thoughts" ? " thought-editor-card" : "";
+      const moveButtons =
+        activeSection === "thoughts"
+          ? ""
+          : `
+            <button type="button" data-action="move-up">上移</button>
+            <button type="button" data-action="move-down">下移</button>
+          `;
       return `
-        <article class="editor-card" data-item-id="${escapeAttr(item.id)}">
+        <article class="editor-card${compactClass}" data-item-id="${escapeAttr(item.id)}">
           <header class="editor-card-header">
             <div>
               <span class="item-number">${String(index + 1).padStart(2, "0")}</span>
@@ -276,8 +287,7 @@ function renderEditor() {
           </header>
           ${fieldMarkup(item, activeSection)}
           <footer class="editor-card-actions">
-            <button type="button" data-action="move-up">上移</button>
-            <button type="button" data-action="move-down">下移</button>
+            ${moveButtons}
             <button type="button" class="danger-button" data-action="delete-item">删除</button>
           </footer>
         </article>

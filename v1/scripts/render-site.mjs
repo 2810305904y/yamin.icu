@@ -116,9 +116,10 @@ export function renderTodos(todos) {
   return getVisibleSortedItems(todos)
     .map((todo) => {
       const progress = Math.max(0, Math.min(100, Number(todo.progress ?? 0)));
+      const tone = escapeHtml(todo.tone || "blue");
       return `
-        <div class="todo-row">
-          <span class="todo-dot todo-${escapeHtml(todo.tone || "blue")}"></span>
+        <div class="todo-row todo-tone-${tone}">
+          <span class="todo-dot todo-${tone}"></span>
           <span class="todo-text">${escapeHtml(todo.title)}</span>
           <span class="todo-track"><span style="width: ${progress}%"></span></span>
         </div>
