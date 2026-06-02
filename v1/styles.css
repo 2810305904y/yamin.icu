@@ -672,6 +672,15 @@ svg {
   pointer-events: none;
 }
 
+.thought-space {
+  position: absolute;
+  z-index: 4;
+  inset: clamp(76px, 9vh, 118px) clamp(30px, 4vw, 84px) clamp(34px, 5vh, 74px) clamp(300px, 23vw, 460px);
+  overflow: hidden;
+  border-radius: 20px;
+  pointer-events: none;
+}
+
 .site-signature {
   position: absolute;
   z-index: 3;
@@ -699,8 +708,7 @@ svg {
 }
 
 .thought-pill {
-  position: absolute;
-  z-index: 2;
+  position: relative;
   display: inline-flex;
   align-items: center;
   min-height: 38px;
@@ -712,34 +720,68 @@ svg {
   background: rgba(255, 255, 255, 0.84);
   box-shadow: 0 10px 24px rgba(37, 99, 235, 0.11);
   backdrop-filter: blur(12px);
+  transform-origin: center;
+  user-select: none;
+}
+
+.thought-space .thought-pill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  opacity: 0;
+  will-change: transform, opacity;
+  transition:
+    opacity 420ms ease,
+    box-shadow 240ms ease;
+}
+
+.thought-space .thought-pill.is-visible {
+  opacity: 1;
+}
+
+.thought-space .thought-pill.is-hidden {
+  opacity: 0;
 }
 
 .pill-green {
-  left: 21%;
-  top: 42%;
   color: #16a34a;
-  transform: rotate(-1deg);
 }
 
 .pill-blue {
-  left: 44%;
-  top: 34%;
   color: #2563eb;
-  transform: rotate(-2deg);
 }
 
 .pill-purple {
-  left: 61%;
-  top: 49%;
   color: #7c3aed;
-  transform: rotate(-5deg);
 }
 
 .pill-orange {
-  right: 12%;
-  top: 38%;
   color: #d97706;
-  transform: rotate(8deg);
+}
+
+.pill-pink {
+  color: #db2777;
+}
+
+.pill-red {
+  color: #ff0000;
+}
+
+.pill-yellow {
+  color: #ca8a04;
+}
+
+.pill-cyan {
+  color: #0891b2;
+}
+
+.pill-black {
+  color: #050505;
+}
+
+.pill-white {
+  color: #334155;
 }
 
 .panel-social {

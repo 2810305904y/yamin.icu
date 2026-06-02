@@ -12,6 +12,8 @@ import {
   renderProjects,
   renderThoughts,
   renderTodos,
+  resolveThoughtCollision,
+  stepThoughtPhysics,
 } from "../scripts/render-site.mjs";
 
 test("getVisibleSortedItems hides disabled entries and sorts by order", () => {
@@ -89,6 +91,58 @@ test("renderers output the visible homepage content", () => {
   assert.match(todoHtml, /视频粗剪工具/);
   assert.match(thoughtHtml, /不是公司官网/);
   assert.match(channelHtml, /YouTube/);
+});
+
+test("thought pills render as motion-ready collision bodies", () => {
+  const thoughtHtml = renderThoughts(siteData.thoughts);
+
+  assert.match(thoughtHtml, /data-thought-pill/);
+  assert.match(thoughtHtml, /data-thought-index="0"/);
+  assert.match(thoughtHtml, /thought-pill pill-/);
+});
+
+test("thought collision physics separates active labels", () => {
+  const first = {
+    active: true,
+    x: 10,
+    y: 10,
+    vx: 12,
+    vy: 0,
+    width: 90,
+    height: 32,
+    scale: 1,
+    rotationSpeed: 4,
+  };
+  const second = {
+    active: true,
+    x: 88,
+    y: 10,
+    vx: -10,
+    vy: 0,
+    width: 90,
+    height: 32,
+    scale: 1,
+    rotationSpeed: -4,
+  };
+
+  assert.equal(resolveThoughtCollision(first, second), true);
+  assert.equal(first.vx, -10);
+  assert.equal(second.vx, 12);
+  assert.ok(first.x < 10);
+  assert.ok(second.x > 88);
+
+  second.active = false;
+  assert.equal(resolveThoughtCollision(first, second), false);
+
+  first.x = -10;
+  first.y = -4;
+  first.vx = -20;
+  first.vy = -10;
+  stepThoughtPhysics([first], { width: 180, height: 80 }, 1);
+  assert.equal(first.x, 8);
+  assert.equal(first.y, 8);
+  assert.ok(first.vx > 0);
+  assert.ok(first.vy > 0);
 });
 
 test("channels put bilibili first and include its public link", () => {

@@ -36,6 +36,9 @@ const iconMap = {
   `,
 };
 
+const thoughtSpaceCleanups = new WeakMap();
+const THOUGHT_BOUND_PADDING = 8;
+
 export function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -49,6 +52,124 @@ export function getVisibleSortedItems(items) {
   return [...items]
     .filter((item) => item.visible !== false)
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+}
+
+export function createSeededRandom(seed) {
+  return () => {
+    seed |= 0;
+    seed = (seed + 0x6d2b79f5) | 0;
+    let value = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    value = (value + Math.imul(value ^ (value >>> 7), 61 | value)) ^ value;
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function randomBetween(random, min, max) {
+  return min + (max - min) * random();
+}
+
+function thoughtSize(item) {
+  const baseWidth = Math.max(1, item.width * item.scale);
+  const baseHeight = Math.max(1, item.height * item.scale);
+  const rotation = ((item.rotation ?? 0) * Math.PI) / 180;
+  const cos = Math.abs(Math.cos(rotation));
+  const sin = Math.abs(Math.sin(rotation));
+  const width = baseWidth * cos + baseHeight * sin;
+  const height = baseWidth * sin + baseHeight * cos;
+
+  return {
+    width: Math.max(1, width),
+    height: Math.max(1, height),
+    offsetX: Math.max(0, (width - baseWidth) / 2),
+    offsetY: Math.max(0, (height - baseHeight) / 2),
+  };
+}
+
+function thoughtAxisRange(axisSize, itemSize) {
+  const padding = axisSize > itemSize + THOUGHT_BOUND_PADDING * 2 ? THOUGHT_BOUND_PADDING : 0;
+  return {
+    min: padding,
+    max: Math.max(padding, axisSize - itemSize - padding),
+  };
+}
+
+function clampThoughtPosition(item, bounds) {
+  const size = thoughtSize(item);
+  const xRange = thoughtAxisRange(bounds.width, size.width);
+  const yRange = thoughtAxisRange(bounds.height, size.height);
+  item.x = Math.min(Math.max(item.x, xRange.min), xRange.max);
+  item.y = Math.min(Math.max(item.y, yRange.min), yRange.max);
+}
+
+export function resolveThoughtCollision(first, second) {
+  if (!first.active || !second.active) return false;
+
+  const firstSize = thoughtSize(first);
+  const secondSize = thoughtSize(second);
+  const firstCenterX = first.x + firstSize.width / 2;
+  const firstCenterY = first.y + firstSize.height / 2;
+  const secondCenterX = second.x + secondSize.width / 2;
+  const secondCenterY = second.y + secondSize.height / 2;
+  const overlapX = firstSize.width / 2 + secondSize.width / 2 - Math.abs(firstCenterX - secondCenterX);
+  const overlapY = firstSize.height / 2 + secondSize.height / 2 - Math.abs(firstCenterY - secondCenterY);
+
+  if (overlapX <= 0 || overlapY <= 0) return false;
+
+  if (overlapX < overlapY) {
+    const direction = firstCenterX < secondCenterX ? -1 : 1;
+    first.x += (overlapX / 2) * direction;
+    second.x -= (overlapX / 2) * direction;
+    [first.vx, second.vx] = [second.vx, first.vx];
+  } else {
+    const direction = firstCenterY < secondCenterY ? -1 : 1;
+    first.y += (overlapY / 2) * direction;
+    second.y -= (overlapY / 2) * direction;
+    [first.vy, second.vy] = [second.vy, first.vy];
+  }
+
+  first.rotationSpeed *= -0.82;
+  second.rotationSpeed *= -0.82;
+  return true;
+}
+
+export function stepThoughtPhysics(items, bounds, dt) {
+  items.forEach((item) => {
+    if (!item.active) return;
+
+    const size = thoughtSize(item);
+    item.x += item.vx * dt;
+    item.y += item.vy * dt;
+    item.rotation = (item.rotation ?? 0) + item.rotationSpeed * dt;
+
+    const xRange = thoughtAxisRange(bounds.width, size.width);
+    const yRange = thoughtAxisRange(bounds.height, size.height);
+
+    if (item.x <= xRange.min) {
+      item.x = xRange.min;
+      item.vx = Math.abs(item.vx);
+    } else if (item.x >= xRange.max) {
+      item.x = xRange.max;
+      item.vx = -Math.abs(item.vx);
+    }
+
+    if (item.y <= yRange.min) {
+      item.y = yRange.min;
+      item.vy = Math.abs(item.vy);
+    } else if (item.y >= yRange.max) {
+      item.y = yRange.max;
+      item.vy = -Math.abs(item.vy);
+    }
+  });
+
+  for (let firstIndex = 0; firstIndex < items.length; firstIndex += 1) {
+    for (let secondIndex = firstIndex + 1; secondIndex < items.length; secondIndex += 1) {
+      resolveThoughtCollision(items[firstIndex], items[secondIndex]);
+    }
+  }
+
+  items.forEach((item) => {
+    if (item.active) clampThoughtPosition(item, bounds);
+  });
 }
 
 function safeHref(url) {
@@ -130,10 +251,183 @@ export function renderTodos(todos) {
 
 export function renderThoughts(thoughts) {
   return getVisibleSortedItems(thoughts)
-    .map((thought) => {
-      return `<span class="thought-pill pill-${escapeHtml(thought.tone || "blue")}">${escapeHtml(thought.text)}</span>`;
+    .map((thought, index) => {
+      const tone = escapeHtml(thought.tone || "blue");
+      return `<span class="thought-pill pill-${tone}" data-thought-pill data-thought-index="${index}">${escapeHtml(thought.text)}</span>`;
     })
     .join("");
+}
+
+function readThoughtBounds(container) {
+  const rect = container.getBoundingClientRect();
+  return {
+    width: Math.max(1, rect.width),
+    height: Math.max(1, rect.height),
+  };
+}
+
+function measureThoughtItem(item) {
+  item.width = Math.max(1, item.element.offsetWidth);
+  item.height = Math.max(1, item.element.offsetHeight);
+}
+
+function applyThoughtStyle(item) {
+  const size = thoughtSize(item);
+  item.element.classList.toggle("is-visible", item.active);
+  item.element.classList.toggle("is-hidden", !item.active);
+  item.element.setAttribute("aria-hidden", item.active ? "false" : "true");
+  item.element.style.left = `${item.x + size.offsetX}px`;
+  item.element.style.top = `${item.y + size.offsetY}px`;
+  item.element.style.transform = `rotate(${item.rotation}deg) scale(${item.scale})`;
+}
+
+function resetThoughtMotion(item, random, bounds) {
+  measureThoughtItem(item);
+  item.scale = randomBetween(random, 0.84, 1.22);
+  item.targetScale = randomBetween(random, 0.84, 1.24);
+  item.rotation = randomBetween(random, -7, 7);
+  item.rotationSpeed = randomBetween(random, -8, 8);
+
+  const size = thoughtSize(item);
+  const xRange = thoughtAxisRange(bounds.width, size.width);
+  const yRange = thoughtAxisRange(bounds.height, size.height);
+  item.x = randomBetween(random, xRange.min, xRange.max);
+  item.y = randomBetween(random, yRange.min, yRange.max);
+  item.vx = randomBetween(random, 18, 46) * (random() > 0.5 ? 1 : -1);
+  item.vy = randomBetween(random, 12, 38) * (random() > 0.5 ? 1 : -1);
+}
+
+function setThoughtActive(item, active, random, bounds) {
+  item.active = active;
+  if (active) {
+    resetThoughtMotion(item, random, bounds);
+  }
+  applyThoughtStyle(item);
+}
+
+function pickRandomItem(random, items) {
+  return items[Math.floor(random() * items.length)];
+}
+
+function toggleThoughtVisibility(items, random, bounds, minVisible, maxVisible) {
+  const activeItems = items.filter((item) => item.active);
+  const inactiveItems = items.filter((item) => !item.active);
+
+  if (inactiveItems.length && (activeItems.length < minVisible || (activeItems.length < maxVisible && random() > 0.48))) {
+    setThoughtActive(pickRandomItem(random, inactiveItems), true, random, bounds);
+    return;
+  }
+
+  if (activeItems.length > minVisible) {
+    setThoughtActive(pickRandomItem(random, activeItems), false, random, bounds);
+  }
+}
+
+export function initThoughtSpace(container) {
+  if (!container || typeof window === "undefined") return () => {};
+
+  const previousCleanup = thoughtSpaceCleanups.get(container);
+  if (previousCleanup) previousCleanup();
+
+  const elements = [...container.querySelectorAll("[data-thought-pill]")];
+  if (!elements.length) return () => {};
+
+  container.classList.add("thought-space");
+
+  const seed = elements.reduce((total, element, index) => {
+    return total + (index + 1) * String(element.textContent || "").length * 97;
+  }, 131);
+  const random = createSeededRandom(seed);
+  const motionAllowed = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const minVisible = Math.min(elements.length, Math.max(2, Math.floor(elements.length * 0.56)));
+  const maxVisible = Math.min(elements.length, Math.max(minVisible, 5));
+  let bounds = readThoughtBounds(container);
+  let frameId = 0;
+  let lastTime = 0;
+  let visibilityTimer = 0;
+
+  const items = elements.map((element, index) => ({
+    element,
+    active: elements.length <= 3 || index < minVisible || random() > 0.35,
+    x: 0,
+    y: 0,
+    vx: 0,
+    vy: 0,
+    width: 1,
+    height: 1,
+    scale: 1,
+    targetScale: 1,
+    rotation: 0,
+    rotationSpeed: 0,
+    nextScaleAt: 0,
+  }));
+
+  items.forEach((item) => resetThoughtMotion(item, random, bounds));
+  while (items.filter((item) => item.active).length < minVisible) {
+    const inactive = items.find((item) => !item.active);
+    if (!inactive) break;
+    inactive.active = true;
+  }
+  items.forEach(applyThoughtStyle);
+
+  function scheduleVisibilityToggle() {
+    if (!motionAllowed || items.length < 2) return;
+    visibilityTimer = window.setTimeout(() => {
+      bounds = readThoughtBounds(container);
+      toggleThoughtVisibility(items, random, bounds, minVisible, maxVisible);
+      scheduleVisibilityToggle();
+    }, randomBetween(random, 3000, 5000));
+  }
+
+  function draw(time = 0) {
+    bounds = readThoughtBounds(container);
+    const dt = lastTime ? Math.min((time - lastTime) / 1000, 0.04) : 0;
+    lastTime = time;
+
+    items.forEach((item) => {
+      measureThoughtItem(item);
+      if (!item.active) return;
+
+      if (time >= item.nextScaleAt) {
+        item.targetScale = randomBetween(random, 0.84, 1.24);
+        item.nextScaleAt = time + randomBetween(random, 2600, 6200);
+      }
+      item.scale += (item.targetScale - item.scale) * Math.min(1, dt * 1.2);
+    });
+
+    if (motionAllowed) {
+      stepThoughtPhysics(items, bounds, dt);
+    }
+
+    items.forEach(applyThoughtStyle);
+
+    if (motionAllowed) {
+      frameId = window.requestAnimationFrame(draw);
+    }
+  }
+
+  const resizeObserver =
+    typeof ResizeObserver === "undefined"
+      ? null
+      : new ResizeObserver(() => {
+          bounds = readThoughtBounds(container);
+          items.forEach((item) => {
+            clampThoughtPosition(item, bounds);
+            applyThoughtStyle(item);
+          });
+        });
+
+  resizeObserver?.observe(container);
+  draw();
+  scheduleVisibilityToggle();
+
+  const cleanup = () => {
+    if (frameId) window.cancelAnimationFrame(frameId);
+    if (visibilityTimer) window.clearTimeout(visibilityTimer);
+    resizeObserver?.disconnect();
+  };
+  thoughtSpaceCleanups.set(container, cleanup);
+  return cleanup;
 }
 
 export function renderChannels(channels) {
@@ -176,7 +470,10 @@ export function mountSite(data = siteData) {
 
   if (targets.projects) targets.projects.innerHTML = rendered.projects;
   if (targets.todos) targets.todos.innerHTML = rendered.todos;
-  if (targets.thoughts) targets.thoughts.innerHTML = rendered.thoughts;
+  if (targets.thoughts) {
+    targets.thoughts.innerHTML = rendered.thoughts;
+    initThoughtSpace(targets.thoughts);
+  }
   if (targets.channels) targets.channels.innerHTML = rendered.channels;
   if (targets.signatureTitle) targets.signatureTitle.textContent = data.identity.title;
   if (targets.signatureSubtitle) targets.signatureSubtitle.textContent = data.identity.subtitle;

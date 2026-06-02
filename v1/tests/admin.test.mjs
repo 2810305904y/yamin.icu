@@ -108,8 +108,10 @@ test("project cards keep a slightly slimmer desktop footprint", async () => {
 
   assert.match(siteStyles, /grid-template-columns:\s*minmax\(200px,\s*0\.94fr\)\s*minmax\(200px,\s*0\.94fr\)\s*minmax\(300px,\s*1\.4fr\)/);
   assert.doesNotMatch(siteStyles, /grid-template-columns:\s*minmax\(210px,\s*1fr\)\s*minmax\(210px,\s*1fr\)\s*minmax\(280px,\s*1\.28fr\)/);
-  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.29-project-card-trim/);
-  assert.match(v1Html, /\.\/styles\.css\?v=1\.29-project-card-trim/);
+  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.30-thought-space/);
+  assert.match(rootHtml, /\/v1\/scripts\/render-site\.mjs\?v=1\.30-thought-space/);
+  assert.match(v1Html, /\.\/styles\.css\?v=1\.30-thought-space/);
+  assert.match(v1Html, /\.\/scripts\/render-site\.mjs\?v=1\.30-thought-space/);
 });
 
 test("todo panel keeps extra items inside its own scroll area", async () => {
@@ -119,6 +121,20 @@ test("todo panel keeps extra items inside its own scroll area", async () => {
   assert.match(siteStyles, /\.panel-todos\s*{[^}]*overflow:\s*hidden/s);
   assert.match(siteStyles, /\.panel-todos \.todo-list\s*{[^}]*overflow-y:\s*auto/s);
   assert.match(siteStyles, /\.todo-row\s*{[^}]*min-height:\s*clamp\(48px,\s*5vh,\s*66px\)/s);
+});
+
+test("thought area is prepared as a bounded motion space", async () => {
+  const siteStyles = await readFile("v1/styles.css", "utf8");
+  const script = await readFile("v1/scripts/render-site.mjs", "utf8");
+  const rootHtml = await readFile("index.html", "utf8");
+
+  assert.match(siteStyles, /\.thought-space\s*{[^}]*position:\s*absolute/s);
+  assert.match(siteStyles, /\.thought-space\s*{[^}]*overflow:\s*hidden/s);
+  assert.match(siteStyles, /\.thought-space \.thought-pill\s*{[^}]*will-change:\s*transform,\s*opacity/s);
+  assert.match(script, /function toggleThoughtVisibility/);
+  assert.match(script, /window\.setTimeout/);
+  assert.match(script, /stepThoughtPhysics\(items,\s*bounds,\s*dt\)/);
+  assert.match(rootHtml, /class="thought-space" data-thoughts/);
 });
 
 test("preview server routes root and admin pages", async () => {

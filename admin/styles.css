@@ -327,6 +327,10 @@ textarea {
   min-height: 170px;
 }
 
+.admin-thought-preview .thought-pill {
+  margin: 8px;
+}
+
 @media (max-width: 1180px) {
   .admin-workbench {
     grid-template-columns: 1fr;
