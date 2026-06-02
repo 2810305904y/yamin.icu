@@ -662,7 +662,7 @@ svg {
 
 .panel-thoughts .section-title-small {
   z-index: 5;
-  transform: translateY(clamp(-24px, -2.4vh, -14px));
+  transform: translateY(clamp(-18px, -1.8vh, -10px));
 }
 
 .panel-thoughts::before {
@@ -676,7 +676,7 @@ svg {
 .thought-space {
   position: absolute;
   z-index: 4;
-  inset: clamp(4px, 1.2vh, 16px) clamp(24px, 3vw, 58px) clamp(0px, 0.8vh, 10px) clamp(22px, 3.2vw, 58px);
+  inset: 0px clamp(24px, 3vw, 58px) 0px clamp(22px, 3.2vw, 58px);
   overflow: hidden;
   border-radius: 20px;
   pointer-events: none;
@@ -733,7 +733,7 @@ svg {
   opacity: 0;
   will-change: transform, opacity;
   transition:
-    opacity 420ms ease,
+    opacity 720ms ease,
     box-shadow 240ms ease;
 }
 

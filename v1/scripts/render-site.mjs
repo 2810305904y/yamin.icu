@@ -38,6 +38,10 @@ const iconMap = {
 
 const thoughtSpaceCleanups = new WeakMap();
 const THOUGHT_BOUND_PADDING = 40;
+const THOUGHT_MIN_VISIBLE = 5;
+const THOUGHT_MAX_VISIBLE = 6;
+const THOUGHT_MIN_TOGGLE_DELAY = 4200;
+const THOUGHT_MAX_TOGGLE_DELAY = 6800;
 const thoughtTonePalette = ["green", "orange", "purple", "pink", "red", "yellow", "cyan", "blue"];
 
 export function escapeHtml(value) {
@@ -67,6 +71,38 @@ export function createSeededRandom(seed) {
 
 function randomBetween(random, min, max) {
   return min + (max - min) * random();
+}
+
+function randomInteger(random, min, max) {
+  return min + Math.floor(random() * (max - min + 1));
+}
+
+export function createThoughtVisibilityRange(count) {
+  const total = Math.max(0, Math.floor(Number(count) || 0));
+  if (total <= THOUGHT_MIN_VISIBLE) {
+    return { min: total, max: total };
+  }
+
+  return {
+    min: Math.min(total, THOUGHT_MIN_VISIBLE),
+    max: Math.min(total, THOUGHT_MAX_VISIBLE),
+  };
+}
+
+export function createInitialThoughtActiveFlags(count, random = Math.random) {
+  const total = Math.max(0, Math.floor(Number(count) || 0));
+  const range = createThoughtVisibilityRange(total);
+  const targetCount = randomInteger(random, range.min, range.max);
+  const flags = new Array(total).fill(false);
+  const indexes = Array.from({ length: total }, (_, index) => index);
+
+  while (indexes.length && flags.filter(Boolean).length < targetCount) {
+    const indexPosition = Math.floor(random() * indexes.length);
+    const itemIndex = indexes.splice(indexPosition, 1)[0];
+    flags[itemIndex] = true;
+  }
+
+  return flags;
 }
 
 export function createThoughtToneSequence(count, random = Math.random) {
@@ -373,8 +409,10 @@ export function initThoughtSpace(container) {
   const random = createSeededRandom(seed);
   const pickThoughtTone = createThoughtTonePicker(random);
   const motionAllowed = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const minVisible = Math.min(elements.length, Math.max(2, Math.floor(elements.length * 0.56)));
-  const maxVisible = Math.min(elements.length, Math.max(minVisible, 5));
+  const visibilityRange = createThoughtVisibilityRange(elements.length);
+  const minVisible = visibilityRange.min;
+  const maxVisible = visibilityRange.max;
+  const initialActiveFlags = createInitialThoughtActiveFlags(elements.length, random);
   let bounds = readThoughtBounds(container);
   let frameId = 0;
   let lastTime = 0;
@@ -382,7 +420,7 @@ export function initThoughtSpace(container) {
 
   const items = elements.map((element, index) => ({
     element,
-    active: elements.length <= 3 || index < minVisible || random() > 0.35,
+    active: initialActiveFlags[index] === true,
     x: 0,
     y: 0,
     vx: 0,
@@ -398,11 +436,6 @@ export function initThoughtSpace(container) {
 
   items.forEach((item) => applyThoughtTone(item.element, pickThoughtTone()));
   items.forEach((item) => resetThoughtMotion(item, random, bounds));
-  while (items.filter((item) => item.active).length < minVisible) {
-    const inactive = items.find((item) => !item.active);
-    if (!inactive) break;
-    inactive.active = true;
-  }
   items.forEach(applyThoughtStyle);
 
   function scheduleVisibilityToggle() {
@@ -411,7 +444,7 @@ export function initThoughtSpace(container) {
       bounds = readThoughtBounds(container);
       toggleThoughtVisibility(items, random, bounds, minVisible, maxVisible, pickThoughtTone);
       scheduleVisibilityToggle();
-    }, randomBetween(random, 3000, 5000));
+    }, randomBetween(random, THOUGHT_MIN_TOGGLE_DELAY, THOUGHT_MAX_TOGGLE_DELAY));
   }
 
   function draw(time = 0) {

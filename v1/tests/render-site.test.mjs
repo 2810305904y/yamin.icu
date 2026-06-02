@@ -5,8 +5,10 @@ import { readFile } from "node:fs/promises";
 import { siteData } from "../content/site-data.mjs";
 import {
   applyBackgroundLabMode,
+  createInitialThoughtActiveFlags,
   createSeededRandom,
   createThoughtToneSequence,
+  createThoughtVisibilityRange,
   escapeHtml,
   getVisibleSortedItems,
   loadLiveSiteData,
@@ -133,6 +135,22 @@ test("thought colors are automatically balanced instead of following stored tone
   assert.match(thoughtHtml, /pill-orange/);
   assert.match(thoughtHtml, /pill-purple/);
   assert.equal((thoughtHtml.match(/pill-blue/g) || []).length, 1);
+});
+
+test("thought space starts with a small floating visible set", () => {
+  const eightRange = createThoughtVisibilityRange(8);
+  const sixRange = createThoughtVisibilityRange(6);
+  const fourRange = createThoughtVisibilityRange(4);
+  const initialFlags = createInitialThoughtActiveFlags(8, createSeededRandom(23));
+  const initialVisibleCount = initialFlags.filter(Boolean).length;
+
+  assert.deepEqual(eightRange, { min: 5, max: 6 });
+  assert.deepEqual(sixRange, { min: 5, max: 6 });
+  assert.deepEqual(fourRange, { min: 4, max: 4 });
+  assert.ok(initialVisibleCount >= 5);
+  assert.ok(initialVisibleCount <= 6);
+  assert.equal(initialFlags.length, 8);
+  assert.equal(initialFlags.every(Boolean), false);
 });
 
 test("thought collision physics separates active labels", () => {
