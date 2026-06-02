@@ -485,13 +485,42 @@ svg {
 }
 
 .panel-todos {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: clamp(26px, 4.4vh, 50px);
+  overflow: hidden;
   padding: clamp(18px, 2vw, 38px) clamp(20px, 2.2vw, 42px) clamp(28px, 3.1vw, 60px);
 }
 
 .todo-list {
   display: grid;
-  gap: clamp(14px, 2.2vh, 26px);
-  margin-top: clamp(72px, 9vh, 112px);
+  gap: clamp(10px, 1.25vh, 14px);
+  margin-top: 0;
+}
+
+.panel-todos .todo-list {
+  min-height: 0;
+  max-height: 100%;
+  align-content: start;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: clamp(2px, 0.4vw, 8px);
+  scrollbar-color: rgba(37, 99, 235, 0.54) rgba(239, 248, 255, 0.28);
+  scrollbar-width: thin;
+}
+
+.panel-todos .todo-list::-webkit-scrollbar {
+  width: 7px;
+}
+
+.panel-todos .todo-list::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(239, 248, 255, 0.28);
+}
+
+.panel-todos .todo-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.54);
 }
 
 .todo-row,
@@ -508,9 +537,9 @@ svg {
 .todo-row {
   grid-template-columns: 14px minmax(0, 1fr);
   gap: 13px;
-  min-height: clamp(56px, 6.2vh, 82px);
-  padding: 14px 16px;
-  border-radius: 16px;
+  min-height: clamp(48px, 5vh, 66px);
+  padding: clamp(10px, 1.1vh, 13px) 16px;
+  border-radius: 14px;
 }
 
 .todo-dot {
