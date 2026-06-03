@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { authorizeAdminRequest, authorizeCronOrAdminRequest } from "./admin-auth.mjs";
@@ -10,6 +10,29 @@ const LOCAL_DATA_PATH = resolve(process.cwd(), "data", "site-data.local.json");
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
+}
+
+class RevisionConflictError extends Error {
+  constructor(message, currentRevision = null) {
+    super(message);
+    this.name = "RevisionConflictError";
+    this.currentRevision = currentRevision;
+  }
+}
+
+function stableSerialize(value) {
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableSerialize(item)).join(",")}]`;
+  }
+
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableSerialize(value[key])}`)
+      .join(",")}}`;
+  }
+
+  return JSON.stringify(value);
 }
 
 function jsonResponse(status, body, headers = {}) {
@@ -56,6 +79,21 @@ function assertValidSiteData(data) {
   });
 
   return clone(data);
+}
+
+export function createSiteDataRevision(data) {
+  return createHash("sha256")
+    .update(stableSerialize(assertValidSiteData(data)), "utf8")
+    .digest("hex");
+}
+
+function siteDataResponse(source, data, extra = {}) {
+  return jsonResponse(200, {
+    source,
+    data,
+    revision: createSiteDataRevision(data),
+    ...extra,
+  });
 }
 
 async function defaultReadLocalData() {
@@ -159,12 +197,20 @@ async function writeSupabaseBackup(data, reason, { env, fetchFn }) {
   };
 }
 
-async function writeSupabaseDataWithBackups(nextData, { env, fetchFn }) {
+async function writeSupabaseDataWithBackups(nextData, { env, fetchFn, expectedRevision }) {
   let previousData;
   try {
     previousData = await readSupabaseData({ env, fetchFn });
   } catch (error) {
     throw new Error(`保存前无法读取线上数据，已停止保存：${error.message}`);
+  }
+
+  const currentRevision = previousData ? createSiteDataRevision(previousData) : "";
+  if (!expectedRevision) {
+    throw new RevisionConflictError("线上内容已经变化或编辑台缺少基准版本，请重新加载当前线上内容后再保存。", currentRevision);
+  }
+  if (currentRevision !== expectedRevision) {
+    throw new RevisionConflictError("线上内容已经变化，当前编辑台基于旧版本，已停止保存以避免覆盖新内容。", currentRevision);
   }
 
   const backup = {};
@@ -180,12 +226,10 @@ async function writeSupabaseDataWithBackups(nextData, { env, fetchFn }) {
     backup.warning = `数据已保存，但保存后备份失败：${error.message}`;
   }
 
-  return backup;
-}
-
-async function parseRequestData(body) {
-  const payload = typeof body === "string" ? JSON.parse(body || "{}") : body || {};
-  return assertValidSiteData(payload.data || payload);
+  return {
+    backup,
+    revision: createSiteDataRevision(nextData),
+  };
 }
 
 function parseRequestPayload(body) {
@@ -211,20 +255,18 @@ export async function handleSiteDataRequest({
     if (hasSupabaseConfig(env)) {
       try {
         const supabaseData = await readSupabaseData({ env, fetchFn });
-        if (supabaseData) return jsonResponse(200, { source: "supabase", data: supabaseData });
+        if (supabaseData) return siteDataResponse("supabase", supabaseData);
       } catch (error) {
-        return jsonResponse(200, {
-          source: "static",
-          data: assertValidSiteData(fallbackData),
+        return siteDataResponse("static", assertValidSiteData(fallbackData), {
           databaseError: error.message,
         });
       }
     }
 
     const localData = await readLocalData();
-    if (localData) return jsonResponse(200, { source: "local", data: localData });
+    if (localData) return siteDataResponse("local", localData);
 
-    return jsonResponse(200, { source: "static", data: assertValidSiteData(fallbackData) });
+    return siteDataResponse("static", assertValidSiteData(fallbackData));
   }
 
   if (method === "PUT") {
@@ -234,17 +276,31 @@ export async function handleSiteDataRequest({
     }
 
     let nextData;
+    let expectedRevision = "";
     try {
-      nextData = await parseRequestData(body);
+      const payload = parseRequestPayload(body);
+      nextData = assertValidSiteData(payload.data || payload);
+      expectedRevision = typeof payload.expectedRevision === "string" ? payload.expectedRevision : "";
     } catch (error) {
       return jsonResponse(400, { error: error.message });
     }
 
     if (hasSupabaseConfig(env)) {
       try {
-        const backup = await writeSupabaseDataWithBackups(nextData, { env, fetchFn });
-        return jsonResponse(200, { source: "supabase", data: nextData, backup }, authHeaders(auth));
+        const result = await writeSupabaseDataWithBackups(nextData, { env, fetchFn, expectedRevision });
+        return jsonResponse(200, {
+          source: "supabase",
+          data: nextData,
+          revision: result.revision,
+          backup: result.backup,
+        }, authHeaders(auth));
       } catch (error) {
+        if (error instanceof RevisionConflictError) {
+          return jsonResponse(409, {
+            error: error.message,
+            currentRevision: error.currentRevision,
+          }, authHeaders(auth));
+        }
         return jsonResponse(502, { error: error.message });
       }
     }
@@ -254,7 +310,11 @@ export async function handleSiteDataRequest({
     }
 
     await writeLocalData(nextData);
-    return jsonResponse(200, { source: "local", data: nextData }, authHeaders(auth));
+    return jsonResponse(200, {
+      source: "local",
+      data: nextData,
+      revision: createSiteDataRevision(nextData),
+    }, authHeaders(auth));
   }
 
   return jsonResponse(405, { error: "不支持这个请求方式。" });

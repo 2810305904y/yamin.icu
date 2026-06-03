@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 
 import { siteData } from "../content/site-data.mjs";
 import { handleAdminSessionRequest } from "../../api/admin-auth.mjs";
-import { handleSiteDataBackupRequest, handleSiteDataRequest } from "../../api/site-data-store.mjs";
+import { createSiteDataRevision, handleSiteDataBackupRequest, handleSiteDataRequest } from "../../api/site-data-store.mjs";
 
 test("site data API reads bundled content when no database or local copy exists", async () => {
   const response = await handleSiteDataRequest({
@@ -18,6 +18,7 @@ test("site data API reads bundled content when no database or local copy exists"
 
   assert.equal(response.status, 200);
   assert.equal(body.source, "static");
+  assert.equal(body.revision, createSiteDataRevision(siteData));
   assert.equal(body.data.identity.title, "鸦珉.icu");
 });
 
@@ -25,7 +26,10 @@ test("site data API rejects production writes without the admin token", async ()
   const response = await handleSiteDataRequest({
     method: "PUT",
     headers: {},
-    body: JSON.stringify(siteData),
+    body: JSON.stringify({
+      data: siteData,
+      expectedRevision: createSiteDataRevision(siteData),
+    }),
     env: {
       VERCEL: "1",
       SITE_ADMIN_TOKEN: "secret",
@@ -49,7 +53,10 @@ test("site data API can save local preview data without database config", async 
   const response = await handleSiteDataRequest({
     method: "PUT",
     headers: {},
-    body: JSON.stringify(nextData),
+    body: JSON.stringify({
+      data: nextData,
+      expectedRevision: createSiteDataRevision(siteData),
+    }),
     env: {},
     fallbackData: siteData,
     writeLocalData: async (value) => {
@@ -110,7 +117,10 @@ test("site data API creates Supabase backups around online writes", async () => 
     headers: {
       Authorization: "Bearer secret",
     },
-    body: JSON.stringify(nextData),
+    body: JSON.stringify({
+      data: nextData,
+      expectedRevision: createSiteDataRevision(siteData),
+    }),
     env: {
       SITE_ADMIN_TOKEN: "secret",
       SUPABASE_URL: "https://example.supabase.co",
@@ -138,12 +148,60 @@ test("site data API creates Supabase backups around online writes", async () => 
 
   assert.equal(response.status, 200);
   assert.equal(body.source, "supabase");
+  assert.equal(body.revision, createSiteDataRevision(nextData));
   assert.equal(backupCalls.length, 2);
   assert.equal(pageWriteCalls.length, 1);
   assert.equal(backupBodies[0].reason, "before-save");
   assert.equal(backupBodies[0].thought_count, siteData.thoughts.length);
   assert.equal(backupBodies[1].reason, "after-save");
   assert.equal(backupBodies[1].thought_count, nextData.thoughts.length);
+});
+
+test("site data API rejects online writes from a stale editing revision", async () => {
+  const calls = [];
+  const nextData = {
+    ...siteData,
+    identity: {
+      ...siteData.identity,
+      subtitle: "旧编辑台误保存测试",
+    },
+  };
+
+  const response = await handleSiteDataRequest({
+    method: "PUT",
+    headers: {
+      Authorization: "Bearer secret",
+    },
+    body: JSON.stringify({
+      data: nextData,
+      expectedRevision: "stale-revision",
+    }),
+    env: {
+      SITE_ADMIN_TOKEN: "secret",
+      SUPABASE_URL: "https://example.supabase.co",
+      SUPABASE_SERVICE_ROLE_KEY: "service-key",
+    },
+    fallbackData: siteData,
+    fetchFn: async (url, options) => {
+      calls.push({ url, options });
+      if (options.method === "GET") {
+        return {
+          ok: true,
+          json: async () => [{ data: siteData }],
+        };
+      }
+      return {
+        ok: true,
+        json: async () => [],
+      };
+    },
+  });
+  const body = JSON.parse(response.body);
+  const pageWriteCalls = calls.filter((call) => call.url === "https://example.supabase.co/rest/v1/site_pages" && call.options.method === "POST");
+
+  assert.equal(response.status, 409);
+  assert.match(body.error, /线上内容已经变化/);
+  assert.equal(pageWriteCalls.length, 0);
 });
 
 test("admin session login stores only a token hash and sets an HttpOnly cookie", async () => {
@@ -215,7 +273,10 @@ test("site data API accepts a trusted admin session cookie and renews it", async
     headers: {
       Cookie: cookie,
     },
-    body: JSON.stringify(siteData),
+    body: JSON.stringify({
+      data: siteData,
+      expectedRevision: createSiteDataRevision(siteData),
+    }),
     env: {
       VERCEL: "1",
       SITE_ADMIN_TOKEN: "secret",

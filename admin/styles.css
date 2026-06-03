@@ -58,21 +58,28 @@
   gap: 10px;
 }
 
-button {
+button,
+.button-link {
   min-height: 38px;
   padding: 0 16px;
   border: 1px solid rgba(37, 99, 235, 0.42);
   border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: #fff;
   font: inherit;
   font-size: 14px;
   font-weight: 800;
+  line-height: 1;
+  text-decoration: none;
   background: linear-gradient(145deg, #60a5fa, #2563eb);
   box-shadow: 1px 2px 7px rgba(37, 99, 235, 0.14);
   cursor: pointer;
 }
 
 .ghost-button,
+.button-link.ghost-button,
 .editor-card-actions button {
   color: var(--blue-600);
   background: rgba(255, 255, 255, 0.68);

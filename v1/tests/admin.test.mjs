@@ -46,6 +46,20 @@ test("admin editor supports local draft and data export workflow", async () => {
   assert.match(html, /清除此设备授权/);
 });
 
+test("admin editor keeps saves tied to the loaded online revision", async () => {
+  const script = await readFile("admin/admin.mjs", "utf8");
+  const html = await readFile("admin/index.html", "utf8");
+
+  assert.match(html, /href="\/"/);
+  assert.match(html, /target="_blank"/);
+  assert.match(html, /data-action="view-home"/);
+  assert.match(script, /loadedContentRevision\s*=\s*null/);
+  assert.match(script, /expectedRevision:\s*loadedContentRevision/);
+  assert.match(script, /result\.response\.status\s*===\s*409/);
+  assert.match(script, /pageshow/);
+  assert.match(script, /checkOnlineRevision/);
+});
+
 test("admin preview follows current editing section and hides thought color editing", async () => {
   const script = (await readFile("admin/admin.mjs", "utf8")).replaceAll("\r\n", "\n");
   const fieldMarkupStart = script.indexOf("function fieldMarkup");
@@ -69,7 +83,8 @@ test("admin preview follows current editing section and hides thought color edit
   assert.doesNotMatch(defaultsBlock, /tone:\s*"blue"/);
   assert.match(script, /function prepareSiteDataForSave/);
   assert.match(script, /data\.thoughts = \(data\.thoughts \|\| \[\]\)\.map\(\(\{ tone, \.\.\.thought \}\) => thought\)/);
-  assert.match(script, /JSON\.stringify\(prepareSiteDataForSave\(state\)\)/);
+  assert.match(script, /JSON\.stringify\(makeDraftPayload\(\)\)/);
+  assert.match(script, /expectedRevision:\s*loadedContentRevision/);
   assert.match(siteStyles, /\.todo-pink/);
   assert.match(siteStyles, /\.todo-red/);
 });
@@ -94,8 +109,8 @@ test("admin shell sits above the shared cloud background", async () => {
   assert.match(styles, /\.admin-shell\s*{[^}]*z-index:\s*1/s);
   assert.match(styles, /\.admin-shell\s*{[^}]*background:\s*rgba\(255, 255, 255, 0\.94\)/s);
   assert.match(styles, /\.editor-panel,[\s\S]*?\.preview-panel\s*{[^}]*background:\s*rgba\(255, 255, 255, 0\.93\)/s);
-  assert.match(html, /\/admin\/styles\.css\?v=1\.4\.3-homepage-label-bounds/);
-  assert.match(html, /\/admin\/admin\.mjs\?v=1\.4\.3-homepage-label-bounds/);
+  assert.match(html, /\/admin\/styles\.css\?v=1\.4\.4-admin-revision/);
+  assert.match(html, /\/admin\/admin\.mjs\?v=1\.4\.4-admin-revision/);
 });
 
 test("homepage cloud layer sits below the translucent map frame", async () => {
@@ -162,19 +177,20 @@ test("version naming uses the new three-part small release format", async () => 
   const namingRules = await readFile("项目进度/2026-06-01_版本命名规则.md", "utf8");
 
   assert.match(readme, /当前阶段：V1\.4/);
-  assert.match(readme, /当前小版本：V1\.4\.3/);
+  assert.match(readme, /当前小版本：V1\.4\.4/);
   assert.match(readme, /当前主页视觉基准（V1\.4）/);
   assert.match(readme, /2400 x 1200/);
   assert.match(readme, /site_page_backups/);
   assert.match(readme, /CRON_SECRET/);
   assert.match(readme, /admin_sessions/);
   assert.match(readme, /HttpOnly cookie/);
-  assert.match(adminHtml, /<p class="admin-kicker">V1\.4\.3<\/p>/);
+  assert.match(adminHtml, /<p class="admin-kicker">V1\.4\.4<\/p>/);
   assert.match(namingRules, /当前阶段记为 `V1\.4`/);
   assert.match(namingRules, /V1\.4\.0\s*->\s*V1\.4 阶段的视觉定稿起点/);
   assert.match(namingRules, /V1\.4\.1\s*->\s*后台保存保护与数据备份补丁/);
   assert.match(namingRules, /V1\.4\.2\s*->\s*后台短会话与可信设备授权/);
   assert.match(namingRules, /V1\.4\.3\s*->\s*主页标题文案、念头边界和频道条高度小调/);
+  assert.match(namingRules, /V1\.4\.4\s*->\s*后台编辑基准版本校验/);
   assert.match(namingRules, /三段式/);
 });
 

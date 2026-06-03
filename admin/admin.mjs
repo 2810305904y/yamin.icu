@@ -26,6 +26,8 @@ const variantOptions = ["large", "wide"];
 let activeSection = "projects";
 let state = clone(siteData);
 let loadedContentSource = "static";
+let loadedContentRevision = null;
+let onlineRevisionConflict = false;
 let pendingAuthResolve = null;
 
 function clone(value) {
@@ -38,17 +40,46 @@ function prepareSiteDataForSave(value) {
   return data;
 }
 
+function makeDraftPayload() {
+  return {
+    data: prepareSiteDataForSave(state),
+    source: loadedContentSource,
+    revision: loadedContentRevision,
+    savedAt: new Date().toISOString(),
+  };
+}
+
+function persistDraft() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(makeDraftPayload()));
+}
+
 function loadDraft() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    const parsed = raw ? JSON.parse(raw) : null;
+    if (!parsed) return null;
+    if (parsed.data && parsed.data.identity) {
+      return {
+        data: parsed.data,
+        source: parsed.source || "draft",
+        revision: parsed.revision || null,
+      };
+    }
+    if (parsed.identity) {
+      return {
+        data: parsed,
+        source: "draft",
+        revision: null,
+      };
+    }
+    return null;
   } catch {
     return null;
   }
 }
 
 function saveDraft() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(prepareSiteDataForSave(state)));
+  persistDraft();
   setStatus("草稿已保存在当前浏览器。");
 }
 
@@ -63,8 +94,10 @@ function clearLegacyAdminToken() {
 async function loadCurrentContent() {
   const draft = loadDraft();
   if (draft) {
-    state = draft;
-    loadedContentSource = "draft";
+    state = clone(draft.data);
+    loadedContentSource = draft.source || "draft";
+    loadedContentRevision = draft.revision || null;
+    onlineRevisionConflict = false;
     render();
     setStatus("已载入当前浏览器里的草稿。");
     return;
@@ -73,6 +106,8 @@ async function loadCurrentContent() {
   const payload = await loadLiveSitePayload(fetch, { timeoutMs: ADMIN_LOAD_TIMEOUT });
   state = clone(payload.data || siteData);
   loadedContentSource = payload.source || "static";
+  loadedContentRevision = payload.revision || null;
+  onlineRevisionConflict = false;
   render();
   if (loadedContentSource === "static") {
     setStatus("没有读到线上数据库，只载入了静态旧数据；为避免覆盖，已禁止直接保存。");
@@ -416,7 +451,10 @@ async function putOnline() {
     method: "PUT",
     credentials: "same-origin",
     headers,
-    body: JSON.stringify(prepareSiteDataForSave(state)),
+    body: JSON.stringify({
+      data: prepareSiteDataForSave(state),
+      expectedRevision: loadedContentRevision,
+    }),
   });
   const payload = await response.json().catch(() => ({}));
   return { response, payload };
@@ -430,6 +468,18 @@ async function saveOnline() {
 
   setStatus("正在保存到线上。");
 
+  if (!loadedContentRevision && loadedContentSource !== "local") {
+    persistDraft();
+    setStatus("没有保存：这个编辑台缺少线上基准版本。当前内容已保留为草稿，请先恢复线上内容后再合并修改。");
+    return;
+  }
+
+  if (onlineRevisionConflict) {
+    persistDraft();
+    setStatus("没有保存：线上内容已经变化，当前内容已保留为草稿。请先恢复线上内容，再重新合并你的修改。");
+    return;
+  }
+
   let result = await putOnline();
 
   if (result.response.status === 401) {
@@ -441,6 +491,13 @@ async function saveOnline() {
     result = await putOnline();
   }
 
+  if (result.response.status === 409) {
+    onlineRevisionConflict = true;
+    persistDraft();
+    setStatus(result.payload.error || "没有保存：线上内容已经变化，当前草稿已保留。请先恢复线上内容后再保存。");
+    return;
+  }
+
   if (!result.response.ok) {
     setStatus(result.payload.error || "保存失败。");
     return;
@@ -448,6 +505,8 @@ async function saveOnline() {
 
   state = clone(result.payload.data || state);
   loadedContentSource = result.payload.source || loadedContentSource;
+  loadedContentRevision = result.payload.revision || loadedContentRevision;
+  onlineRevisionConflict = false;
   localStorage.removeItem(STORAGE_KEY);
   render();
 
@@ -467,11 +526,26 @@ async function restoreOnlineContent() {
   const payload = await loadLiveSitePayload(fetch, { timeoutMs: ADMIN_LOAD_TIMEOUT });
   state = clone(payload.data || siteData);
   loadedContentSource = payload.source || "static";
+  loadedContentRevision = payload.revision || null;
+  onlineRevisionConflict = false;
   render();
   if (loadedContentSource === "static") {
     setStatus("没有读到线上数据库，只恢复到静态旧数据；为避免覆盖，已禁止直接保存。");
   } else {
     setStatus("已恢复为当前线上内容。");
+  }
+}
+
+async function checkOnlineRevision() {
+  if (!loadedContentRevision || loadedContentSource === "static") return;
+
+  const payload = await loadLiveSitePayload(fetch, { timeoutMs: ADMIN_LOAD_TIMEOUT });
+  if (!payload.revision || payload.source === "static") return;
+
+  if (payload.revision !== loadedContentRevision) {
+    onlineRevisionConflict = true;
+    persistDraft();
+    setStatus("线上内容已经变化：当前编辑台基于旧版本，已保留为草稿。请先恢复线上内容，再合并你的修改。");
   }
 }
 
@@ -583,6 +657,12 @@ document.querySelector("[data-auth-cancel]").addEventListener("click", () => {
 
 document.querySelector("[data-auth-dialog]").addEventListener("cancel", () => {
   resolveAuthDialog(false);
+});
+
+window.addEventListener("pageshow", (event) => {
+  if (event.persisted) {
+    checkOnlineRevision();
+  }
 });
 
 render();
