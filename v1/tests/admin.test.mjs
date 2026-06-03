@@ -25,6 +25,10 @@ test("admin editor supports local draft and data export workflow", async () => {
   assert.match(script, /saveOnline/);
   assert.match(script, /\/api\/site-data/);
   assert.match(script, /yamin\.adminToken\.v1/);
+  assert.match(script, /loadLiveSitePayload/);
+  assert.match(script, /ADMIN_LOAD_TIMEOUT\s*=\s*30000/);
+  assert.match(script, /loadedContentSource\s*=\s*"static"/);
+  assert.match(script, /没有保存：后台没有读到线上数据库/);
   assert.match(script, /downloadDataFile/);
   assert.match(script, /getDefaults/);
   assert.match(script, /moveItem/);
@@ -82,8 +86,8 @@ test("admin shell sits above the shared cloud background", async () => {
   assert.match(styles, /\.admin-shell\s*{[^}]*z-index:\s*1/s);
   assert.match(styles, /\.admin-shell\s*{[^}]*background:\s*rgba\(255, 255, 255, 0\.94\)/s);
   assert.match(styles, /\.editor-panel,[\s\S]*?\.preview-panel\s*{[^}]*background:\s*rgba\(255, 255, 255, 0\.93\)/s);
-  assert.match(html, /\/admin\/styles\.css\?v=1\.27-admin-editor-controls/);
-  assert.match(html, /\/admin\/admin\.mjs\?v=1\.27-admin-editor-controls/);
+  assert.match(html, /\/admin\/styles\.css\?v=1\.4\.1-data-safety/);
+  assert.match(html, /\/admin\/admin\.mjs\?v=1\.4\.1-data-safety/);
 });
 
 test("homepage cloud layer sits below the translucent map frame", async () => {
@@ -146,12 +150,15 @@ test("version naming uses the new three-part small release format", async () => 
   const namingRules = await readFile("项目进度/2026-06-01_版本命名规则.md", "utf8");
 
   assert.match(readme, /当前阶段：V1\.4/);
-  assert.match(readme, /当前小版本：V1\.4\.0/);
+  assert.match(readme, /当前小版本：V1\.4\.1/);
   assert.match(readme, /当前主页视觉基准（V1\.4）/);
   assert.match(readme, /2400 x 1200/);
-  assert.match(adminHtml, /<p class="admin-kicker">V1\.4\.0<\/p>/);
+  assert.match(readme, /site_page_backups/);
+  assert.match(readme, /CRON_SECRET/);
+  assert.match(adminHtml, /<p class="admin-kicker">V1\.4\.1<\/p>/);
   assert.match(namingRules, /当前阶段记为 `V1\.4`/);
   assert.match(namingRules, /V1\.4\.0\s*->\s*V1\.4 阶段的视觉定稿起点/);
+  assert.match(namingRules, /V1\.4\.1\s*->\s*后台保存保护与数据备份补丁/);
   assert.match(namingRules, /三段式/);
 });
 
@@ -216,4 +223,5 @@ test("preview server routes root and admin pages", async () => {
   assert.match(server, /pathname === "\/admin"/);
   assert.match(server, /join\(root, "admin", "index\.html"\)/);
   assert.match(server, /pathname === "\/api\/site-data"/);
+  assert.match(server, /pathname === "\/api\/site-data-backup"/);
 });

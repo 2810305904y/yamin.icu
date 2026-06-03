@@ -1,6 +1,6 @@
 import { siteData } from "/v1/content/site-data.mjs";
 import {
-  loadLiveSiteData,
+  loadLiveSitePayload,
   renderChannels,
   renderProjects,
   renderThoughts,
@@ -9,6 +9,7 @@ import {
 
 const STORAGE_KEY = "yamin.siteDataDraft.v1";
 const ADMIN_TOKEN_KEY = "yamin.adminToken.v1";
+const ADMIN_LOAD_TIMEOUT = 30000;
 
 const sectionMeta = {
   projects: { label: "项目卡片", itemName: "项目" },
@@ -24,6 +25,7 @@ const variantOptions = ["large", "wide"];
 
 let activeSection = "projects";
 let state = clone(siteData);
+let loadedContentSource = "static";
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -53,14 +55,23 @@ async function loadCurrentContent() {
   const draft = loadDraft();
   if (draft) {
     state = draft;
+    loadedContentSource = "draft";
     render();
     setStatus("已载入当前浏览器里的草稿。");
     return;
   }
 
-  state = clone(await loadLiveSiteData());
+  const payload = await loadLiveSitePayload(fetch, { timeoutMs: ADMIN_LOAD_TIMEOUT });
+  state = clone(payload.data || siteData);
+  loadedContentSource = payload.source || "static";
   render();
-  setStatus("已载入当前线上内容。");
+  if (loadedContentSource === "static") {
+    setStatus("没有读到线上数据库，只载入了静态旧数据；为避免覆盖，已禁止直接保存。");
+  } else if (loadedContentSource === "local") {
+    setStatus("已载入本地预览数据。");
+  } else {
+    setStatus("已载入当前线上内容。");
+  }
 }
 
 function setStatus(message) {
@@ -372,6 +383,11 @@ async function putOnline(token = "") {
 }
 
 async function saveOnline() {
+  if (loadedContentSource === "static") {
+    setStatus("没有保存：后台没有读到线上数据库，只读到了静态旧数据。请刷新后再保存。");
+    return;
+  }
+
   setStatus("正在保存到线上。");
 
   let token = getStoredAdminToken();
@@ -393,21 +409,32 @@ async function saveOnline() {
   }
 
   state = clone(result.payload.data || state);
+  loadedContentSource = result.payload.source || loadedContentSource;
   localStorage.removeItem(STORAGE_KEY);
   render();
 
+  const backupWarning = result.payload.backup && result.payload.backup.warning
+    ? ` ${result.payload.backup.warning}`
+    : "";
+
   if (result.payload.source === "local") {
-    setStatus("已保存到本地预览数据，首页刷新后可见。");
+    setStatus(`已保存到本地预览数据，首页刷新后可见。${backupWarning}`);
   } else {
-    setStatus("已保存到线上数据库，首页刷新后可见。");
+    setStatus(`已保存到线上数据库，已生成保存前备份，首页刷新后可见。${backupWarning}`);
   }
 }
 
 async function restoreOnlineContent() {
   localStorage.removeItem(STORAGE_KEY);
-  state = clone(await loadLiveSiteData());
+  const payload = await loadLiveSitePayload(fetch, { timeoutMs: ADMIN_LOAD_TIMEOUT });
+  state = clone(payload.data || siteData);
+  loadedContentSource = payload.source || "static";
   render();
-  setStatus("已恢复为当前线上内容。");
+  if (loadedContentSource === "static") {
+    setStatus("没有读到线上数据库，只恢复到静态旧数据；为避免覆盖，已禁止直接保存。");
+  } else {
+    setStatus("已恢复为当前线上内容。");
+  }
 }
 
 function downloadDataFile() {

@@ -14,5 +14,11 @@
       "source": "/content/:path*",
       "destination": "/v1/content/:path*"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/site-data-backup",
+      "schedule": "0 20 * * 0"
+    }
   ]
 }

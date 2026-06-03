@@ -1,7 +1,7 @@
 # 鸦珉.icu 个人主页
 
 当前阶段：V1.4
-当前小版本：V1.4.0
+当前小版本：V1.4.1
 项目定位：个人主页 / 项目地图 / 公开频道入口
 
 ## 线上地址
@@ -87,7 +87,7 @@ https://鸦珉.icu/admin
 http://127.0.0.1:4173/admin
 ```
 
-当前编辑台只负责编辑草稿、预览和导出数据文件。它还不能直接写入线上网站。
+当前编辑台负责编辑草稿、预览、导出数据文件，并在配置保存口令后写入线上网站。
 
 V1.25 起新增 `/api/site-data` 数据接口：
 
@@ -99,9 +99,18 @@ V1.25 起新增 `/api/site-data` 数据接口：
   - `SUPABASE_SERVICE_ROLE_KEY`
   - `SITE_ADMIN_TOKEN`
   - `SITE_DATA_TABLE`（可选，默认 `site_pages`）
+  - `SITE_DATA_BACKUP_TABLE`（可选，默认 `site_page_backups`）
   - `SITE_DATA_ID`（可选，默认 `homepage-v1`）
+  - `CRON_SECRET`（用于每周自动备份接口授权）
 
 `SUPABASE_SERVICE_ROLE_KEY` 只放在 Vercel 环境变量里，不能放到浏览器端代码里。
+
+V1.4.1 起新增后台数据安全规则：
+
+- 后台编辑台如果没有读到线上数据库，只读到静态旧数据，会禁止直接保存，避免旧内容覆盖线上数据。
+- 线上保存前会先把当前数据库内容写入 `site_page_backups`，保存后再写入一份新快照。
+- `/api/site-data-backup` 可用于手动或定时备份当前线上内容。
+- `vercel.json` 配置每周自动调用一次 `/api/site-data-backup`，生产环境需要设置 `CRON_SECRET`。
 
 V1.27 调整后台编辑体验：
 - 修复项目卡片、待办横条的上移 / 下移排序。

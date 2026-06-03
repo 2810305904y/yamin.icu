@@ -1,7 +1,9 @@
+import { randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 
 const DEFAULT_TABLE = "site_pages";
+const DEFAULT_BACKUP_TABLE = "site_page_backups";
 const DEFAULT_PAGE_ID = "homepage-v1";
 const LOCAL_DATA_PATH = resolve(process.cwd(), "data", "site-data.local.json");
 
@@ -44,6 +46,7 @@ function getSupabaseSettings(env = {}) {
     url: String(env.SUPABASE_URL || "").replace(/\/$/, ""),
     key: String(env.SUPABASE_SERVICE_ROLE_KEY || ""),
     table: String(env.SITE_DATA_TABLE || DEFAULT_TABLE),
+    backupTable: String(env.SITE_DATA_BACKUP_TABLE || DEFAULT_BACKUP_TABLE),
     pageId: String(env.SITE_DATA_ID || DEFAULT_PAGE_ID),
   };
 }
@@ -123,15 +126,93 @@ async function writeSupabaseData(data, { env, fetchFn }) {
   }
 }
 
+function countThoughts(data) {
+  return Array.isArray(data.thoughts) ? data.thoughts.length : 0;
+}
+
+function makeBackupRecord(data, settings, reason) {
+  return {
+    id: `${settings.pageId}-${Date.now()}-${randomUUID()}`,
+    page_id: settings.pageId,
+    reason,
+    data,
+    thought_count: countThoughts(data),
+    created_at: new Date().toISOString(),
+  };
+}
+
+async function writeSupabaseBackup(data, reason, { env, fetchFn }) {
+  const settings = getSupabaseSettings(env);
+  const record = makeBackupRecord(data, settings, reason);
+  const url = `${settings.url}/rest/v1/${settings.backupTable}`;
+  const response = await fetchFn(url, {
+    method: "POST",
+    headers: {
+      apikey: settings.key,
+      Authorization: `Bearer ${settings.key}`,
+      "Content-Type": "application/json",
+      Prefer: "return=representation",
+    },
+    body: JSON.stringify(record),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Supabase backup failed: ${response.status}`);
+  }
+
+  return {
+    id: record.id,
+    pageId: record.page_id,
+    reason: record.reason,
+    thoughtCount: record.thought_count,
+    createdAt: record.created_at,
+  };
+}
+
+async function writeSupabaseDataWithBackups(nextData, { env, fetchFn }) {
+  let previousData;
+  try {
+    previousData = await readSupabaseData({ env, fetchFn });
+  } catch (error) {
+    throw new Error(`保存前无法读取线上数据，已停止保存：${error.message}`);
+  }
+
+  const backup = {};
+  if (previousData) {
+    backup.before = await writeSupabaseBackup(previousData, "before-save", { env, fetchFn });
+  }
+
+  await writeSupabaseData(nextData, { env, fetchFn });
+
+  try {
+    backup.after = await writeSupabaseBackup(nextData, "after-save", { env, fetchFn });
+  } catch (error) {
+    backup.warning = `数据已保存，但保存后备份失败：${error.message}`;
+  }
+
+  return backup;
+}
+
 async function parseRequestData(body) {
   const payload = typeof body === "string" ? JSON.parse(body || "{}") : body || {};
   return assertValidSiteData(payload.data || payload);
+}
+
+function parseRequestPayload(body) {
+  if (typeof body === "string") return JSON.parse(body || "{}");
+  return body || {};
 }
 
 function canWrite(headers, env = {}) {
   const expected = env.SITE_ADMIN_TOKEN;
   if (!expected) return !env.VERCEL;
   return getAdminToken(headers) === expected;
+}
+
+function canRunBackup(headers, env = {}) {
+  const cronSecret = env.CRON_SECRET;
+  if (cronSecret && getAdminToken(headers) === cronSecret) return true;
+  return canWrite(headers, env);
 }
 
 export async function handleSiteDataRequest({
@@ -182,8 +263,8 @@ export async function handleSiteDataRequest({
 
     if (hasSupabaseConfig(env)) {
       try {
-        await writeSupabaseData(nextData, { env, fetchFn });
-        return jsonResponse(200, { source: "supabase", data: nextData });
+        const backup = await writeSupabaseDataWithBackups(nextData, { env, fetchFn });
+        return jsonResponse(200, { source: "supabase", data: nextData, backup });
       } catch (error) {
         return jsonResponse(502, { error: error.message });
       }
@@ -200,3 +281,46 @@ export async function handleSiteDataRequest({
   return jsonResponse(405, { error: "不支持这个请求方式。" });
 }
 
+export async function handleSiteDataBackupRequest({
+  method,
+  headers,
+  body,
+  env = process.env,
+  fetchFn = fetch,
+}) {
+  if (method === "OPTIONS") {
+    return jsonResponse(204, {});
+  }
+
+  if (method !== "GET" && method !== "POST") {
+    return jsonResponse(405, { error: "不支持这个请求方式。" });
+  }
+
+  if (!canRunBackup(headers, env)) {
+    return jsonResponse(401, { error: "需要后台备份口令。" });
+  }
+
+  if (!hasSupabaseConfig(env)) {
+    return jsonResponse(501, { error: "备份需要先配置 Supabase 数据库。" });
+  }
+
+  let reason = "manual-backup";
+  if (method === "POST") {
+    try {
+      const payload = parseRequestPayload(body);
+      if (payload.reason) reason = String(payload.reason);
+    } catch {
+      return jsonResponse(400, { error: "备份请求格式不正确。" });
+    }
+  }
+
+  try {
+    const currentData = await readSupabaseData({ env, fetchFn });
+    if (!currentData) return jsonResponse(404, { error: "没有找到可备份的线上数据。" });
+
+    const backup = await writeSupabaseBackup(currentData, reason, { env, fetchFn });
+    return jsonResponse(200, { source: "supabase", backup });
+  } catch (error) {
+    return jsonResponse(502, { error: error.message });
+  }
+}

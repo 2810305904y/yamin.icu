@@ -25,3 +25,19 @@ before update on public.site_pages
 for each row
 execute function public.set_site_pages_updated_at();
 
+create table if not exists public.site_page_backups (
+  id text primary key,
+  page_id text not null,
+  reason text not null default 'manual-backup',
+  data jsonb not null,
+  thought_count integer not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists site_page_backups_page_created_idx
+on public.site_page_backups (page_id, created_at desc);
+
+alter table public.site_page_backups enable row level security;
+
+revoke all on table public.site_page_backups from anon, authenticated;
+grant select, insert on table public.site_page_backups to service_role;

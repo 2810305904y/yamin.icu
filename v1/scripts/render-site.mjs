@@ -671,7 +671,7 @@ export function mountSite(data = siteData, options = {}) {
   if (targets.signatureSubtitle) targets.signatureSubtitle.textContent = data.identity.subtitle;
 }
 
-export async function loadLiveSiteData(fetchFn = fetch, options = {}) {
+export async function loadLiveSitePayload(fetchFn = fetch, options = {}) {
   const timeoutMs = Math.max(0, Number(options.timeoutMs == null ? LIVE_DATA_TIMEOUT : options.timeoutMs));
   const requestOptions = { cache: "no-store" };
   let abortController = null;
@@ -685,15 +685,23 @@ export async function loadLiveSiteData(fetchFn = fetch, options = {}) {
     }
 
     const response = await fetchFn("/api/site-data", requestOptions);
-    if (!response.ok) return siteData;
+    if (!response.ok) {
+      return { source: "static", data: siteData, apiError: `HTTP ${response.status}` };
+    }
 
     const payload = await response.json();
-    return (payload && payload.data) || siteData;
+    if (payload && payload.data) return payload;
+    return { source: "static", data: siteData, apiError: "接口没有返回站点数据。" };
   } catch (error) {
-    return siteData;
+    return { source: "static", data: siteData, apiError: error.message || "读取线上数据失败。" };
   } finally {
     if (timeoutId) globalThis.clearTimeout(timeoutId);
   }
+}
+
+export async function loadLiveSiteData(fetchFn = fetch, options = {}) {
+  const payload = await loadLiveSitePayload(fetchFn, options);
+  return payload.data || siteData;
 }
 
 export async function mountLiveSite() {

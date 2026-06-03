@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 import { siteData } from "../content/site-data.mjs";
-import { handleSiteDataRequest } from "../../api/site-data-store.mjs";
+import { handleSiteDataBackupRequest, handleSiteDataRequest } from "../../api/site-data-store.mjs";
 
 test("site data API reads bundled content when no database or local copy exists", async () => {
   const response = await handleSiteDataRequest({
@@ -89,11 +89,140 @@ test("site data API uses Supabase REST when database config is present", async (
   assert.equal(calls[0].options.headers.Authorization, "Bearer service-key");
 });
 
+test("site data API creates Supabase backups around online writes", async () => {
+  const calls = [];
+  const nextData = {
+    ...siteData,
+    thoughts: [
+      ...siteData.thoughts,
+      {
+        id: "thought-backup-test",
+        order: 999,
+        visible: true,
+        text: "备份测试念头",
+      },
+    ],
+  };
+
+  const response = await handleSiteDataRequest({
+    method: "PUT",
+    headers: {
+      Authorization: "Bearer secret",
+    },
+    body: JSON.stringify(nextData),
+    env: {
+      SITE_ADMIN_TOKEN: "secret",
+      SUPABASE_URL: "https://example.supabase.co",
+      SUPABASE_SERVICE_ROLE_KEY: "service-key",
+    },
+    fallbackData: siteData,
+    fetchFn: async (url, options) => {
+      calls.push({ url, options });
+      if (options.method === "GET") {
+        return {
+          ok: true,
+          json: async () => [{ data: siteData }],
+        };
+      }
+      return {
+        ok: true,
+        json: async () => [],
+      };
+    },
+  });
+  const body = JSON.parse(response.body);
+  const backupCalls = calls.filter((call) => call.url.includes("/rest/v1/site_page_backups"));
+  const pageWriteCalls = calls.filter((call) => call.url === "https://example.supabase.co/rest/v1/site_pages" && call.options.method === "POST");
+  const backupBodies = backupCalls.map((call) => JSON.parse(call.options.body));
+
+  assert.equal(response.status, 200);
+  assert.equal(body.source, "supabase");
+  assert.equal(backupCalls.length, 2);
+  assert.equal(pageWriteCalls.length, 1);
+  assert.equal(backupBodies[0].reason, "before-save");
+  assert.equal(backupBodies[0].thought_count, siteData.thoughts.length);
+  assert.equal(backupBodies[1].reason, "after-save");
+  assert.equal(backupBodies[1].thought_count, nextData.thoughts.length);
+});
+
+test("site data API stops online writes when the current Supabase data cannot be read", async () => {
+  const calls = [];
+  const response = await handleSiteDataRequest({
+    method: "PUT",
+    headers: {
+      Authorization: "Bearer secret",
+    },
+    body: JSON.stringify(siteData),
+    env: {
+      SITE_ADMIN_TOKEN: "secret",
+      SUPABASE_URL: "https://example.supabase.co",
+      SUPABASE_SERVICE_ROLE_KEY: "service-key",
+    },
+    fallbackData: siteData,
+    fetchFn: async (url, options) => {
+      calls.push({ url, options });
+      return {
+        ok: false,
+        status: 503,
+        json: async () => [],
+      };
+    },
+  });
+  const body = JSON.parse(response.body);
+
+  assert.equal(response.status, 502);
+  assert.match(body.error, /保存前无法读取线上数据/);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].options.method, "GET");
+});
+
+test("site data backup endpoint snapshots current Supabase content", async () => {
+  const calls = [];
+  const response = await handleSiteDataBackupRequest({
+    method: "POST",
+    headers: {
+      Authorization: "Bearer cron-secret",
+    },
+    body: JSON.stringify({ reason: "weekly-backup" }),
+    env: {
+      CRON_SECRET: "cron-secret",
+      SUPABASE_URL: "https://example.supabase.co",
+      SUPABASE_SERVICE_ROLE_KEY: "service-key",
+    },
+    fetchFn: async (url, options) => {
+      calls.push({ url, options });
+      if (options.method === "GET") {
+        return {
+          ok: true,
+          json: async () => [{ data: siteData }],
+        };
+      }
+      return {
+        ok: true,
+        json: async () => [],
+      };
+    },
+  });
+  const body = JSON.parse(response.body);
+  const backupBody = JSON.parse(calls[1].options.body);
+
+  assert.equal(response.status, 200);
+  assert.equal(body.source, "supabase");
+  assert.equal(body.backup.reason, "weekly-backup");
+  assert.equal(backupBody.reason, "weekly-backup");
+  assert.equal(backupBody.thought_count, siteData.thoughts.length);
+});
+
 test("Supabase setup SQL keeps site data behind service-role writes", async () => {
   const sql = await readFile("supabase/site_pages.sql", "utf8");
 
   assert.match(sql, /create table if not exists public\.site_pages/);
+  assert.match(sql, /create table if not exists public\.site_page_backups/);
+  assert.match(sql, /site_page_backups_page_created_idx/);
   assert.match(sql, /alter table public\.site_pages enable row level security/);
+  assert.match(sql, /alter table public\.site_page_backups enable row level security/);
   assert.match(sql, /revoke all on table public\.site_pages from anon, authenticated/);
+  assert.match(sql, /revoke all on table public\.site_page_backups from anon, authenticated/);
   assert.match(sql, /grant select, insert, update on table public\.site_pages to service_role/);
+  assert.match(sql, /grant select, insert on table public\.site_page_backups to service_role/);
 });

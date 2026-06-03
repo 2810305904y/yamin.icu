@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { extname, join, normalize, resolve } from "node:path";
-import { handleSiteDataRequest } from "../api/site-data-store.mjs";
+import { handleSiteDataBackupRequest, handleSiteDataRequest } from "../api/site-data-store.mjs";
 import { siteData } from "./content/site-data.mjs";
 
 const root = resolve(import.meta.dirname, "..");
@@ -60,6 +60,19 @@ const server = createServer(async (request, response) => {
       body: await readRequestBody(request),
       env: process.env,
       fallbackData: siteData,
+    });
+
+    response.writeHead(result.status, result.headers);
+    response.end(result.body);
+    return;
+  }
+
+  if (pathname === "/api/site-data-backup") {
+    const result = await handleSiteDataBackupRequest({
+      method: request.method,
+      headers: request.headers,
+      body: await readRequestBody(request),
+      env: process.env,
     });
 
     response.writeHead(result.status, result.headers);
