@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { extname, join, normalize, resolve } from "node:path";
+import { handleAdminSessionRequest } from "../api/admin-auth.mjs";
 import { handleSiteDataBackupRequest, handleSiteDataRequest } from "../api/site-data-store.mjs";
 import { siteData } from "./content/site-data.mjs";
 
@@ -69,6 +70,19 @@ const server = createServer(async (request, response) => {
 
   if (pathname === "/api/site-data-backup") {
     const result = await handleSiteDataBackupRequest({
+      method: request.method,
+      headers: request.headers,
+      body: await readRequestBody(request),
+      env: process.env,
+    });
+
+    response.writeHead(result.status, result.headers);
+    response.end(result.body);
+    return;
+  }
+
+  if (pathname === "/api/admin-session") {
+    const result = await handleAdminSessionRequest({
       method: request.method,
       headers: request.headers,
       body: await readRequestBody(request),

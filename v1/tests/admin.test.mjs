@@ -24,7 +24,13 @@ test("admin editor supports local draft and data export workflow", async () => {
   assert.match(script, /saveDraft/);
   assert.match(script, /saveOnline/);
   assert.match(script, /\/api\/site-data/);
-  assert.match(script, /yamin\.adminToken\.v1/);
+  assert.match(script, /\/api\/admin-session/);
+  assert.match(script, /requestAdminSession/);
+  assert.match(script, /data-auth-trust/);
+  assert.match(script, /credentials:\s*"same-origin"/);
+  assert.match(script, /LEGACY_ADMIN_TOKEN_KEY\s*=\s*"yamin\.adminToken\.v1"/);
+  assert.doesNotMatch(script, /localStorage\.setItem\(ADMIN_TOKEN_KEY/);
+  assert.doesNotMatch(script, /storeAdminToken/);
   assert.match(script, /loadLiveSitePayload/);
   assert.match(script, /ADMIN_LOAD_TIMEOUT\s*=\s*30000/);
   assert.match(script, /loadedContentSource\s*=\s*"static"/);
@@ -36,6 +42,8 @@ test("admin editor supports local draft and data export workflow", async () => {
   assert.match(script, /renderPreview/);
   assert.match(script, /data-preview-section/);
   assert.match(html, /保存到线上/);
+  assert.match(html, /信任这台设备/);
+  assert.match(html, /清除此设备授权/);
 });
 
 test("admin preview follows current editing section and hides thought color editing", async () => {
@@ -86,8 +94,8 @@ test("admin shell sits above the shared cloud background", async () => {
   assert.match(styles, /\.admin-shell\s*{[^}]*z-index:\s*1/s);
   assert.match(styles, /\.admin-shell\s*{[^}]*background:\s*rgba\(255, 255, 255, 0\.94\)/s);
   assert.match(styles, /\.editor-panel,[\s\S]*?\.preview-panel\s*{[^}]*background:\s*rgba\(255, 255, 255, 0\.93\)/s);
-  assert.match(html, /\/admin\/styles\.css\?v=1\.4\.1-data-safety/);
-  assert.match(html, /\/admin\/admin\.mjs\?v=1\.4\.1-data-safety/);
+  assert.match(html, /\/admin\/styles\.css\?v=1\.4\.2-admin-session/);
+  assert.match(html, /\/admin\/admin\.mjs\?v=1\.4\.2-admin-session/);
 });
 
 test("homepage cloud layer sits below the translucent map frame", async () => {
@@ -150,15 +158,18 @@ test("version naming uses the new three-part small release format", async () => 
   const namingRules = await readFile("项目进度/2026-06-01_版本命名规则.md", "utf8");
 
   assert.match(readme, /当前阶段：V1\.4/);
-  assert.match(readme, /当前小版本：V1\.4\.1/);
+  assert.match(readme, /当前小版本：V1\.4\.2/);
   assert.match(readme, /当前主页视觉基准（V1\.4）/);
   assert.match(readme, /2400 x 1200/);
   assert.match(readme, /site_page_backups/);
   assert.match(readme, /CRON_SECRET/);
-  assert.match(adminHtml, /<p class="admin-kicker">V1\.4\.1<\/p>/);
+  assert.match(readme, /admin_sessions/);
+  assert.match(readme, /HttpOnly cookie/);
+  assert.match(adminHtml, /<p class="admin-kicker">V1\.4\.2<\/p>/);
   assert.match(namingRules, /当前阶段记为 `V1\.4`/);
   assert.match(namingRules, /V1\.4\.0\s*->\s*V1\.4 阶段的视觉定稿起点/);
   assert.match(namingRules, /V1\.4\.1\s*->\s*后台保存保护与数据备份补丁/);
+  assert.match(namingRules, /V1\.4\.2\s*->\s*后台短会话与可信设备授权/);
   assert.match(namingRules, /三段式/);
 });
 
@@ -224,4 +235,5 @@ test("preview server routes root and admin pages", async () => {
   assert.match(server, /join\(root, "admin", "index\.html"\)/);
   assert.match(server, /pathname === "\/api\/site-data"/);
   assert.match(server, /pathname === "\/api\/site-data-backup"/);
+  assert.match(server, /pathname === "\/api\/admin-session"/);
 });

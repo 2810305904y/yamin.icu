@@ -6,7 +6,7 @@
   "scripts": {
     "preview": "node v1/server.mjs",
     "test": "node --test v1/tests/render-site.test.mjs v1/tests/admin.test.mjs v1/tests/site-data-api.test.mjs",
-    "check": "node --check v1/server.mjs && node --check v1/scripts/render-site.mjs && node --check admin/admin.mjs && node --check api/site-data.mjs && node --check api/site-data-backup.mjs && node --check api/site-data-store.mjs && node --test v1/tests/render-site.test.mjs v1/tests/admin.test.mjs v1/tests/site-data-api.test.mjs"
+    "check": "node --check v1/server.mjs && node --check v1/scripts/render-site.mjs && node --check admin/admin.mjs && node --check api/admin-auth.mjs && node --check api/admin-session.mjs && node --check api/site-data.mjs && node --check api/site-data-backup.mjs && node --check api/site-data-store.mjs && node --test v1/tests/render-site.test.mjs v1/tests/admin.test.mjs v1/tests/site-data-api.test.mjs"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1"

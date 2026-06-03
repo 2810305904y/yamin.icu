@@ -8,7 +8,7 @@ import {
 } from "/v1/scripts/render-site.mjs";
 
 const STORAGE_KEY = "yamin.siteDataDraft.v1";
-const ADMIN_TOKEN_KEY = "yamin.adminToken.v1";
+const LEGACY_ADMIN_TOKEN_KEY = "yamin.adminToken.v1";
 const ADMIN_LOAD_TIMEOUT = 30000;
 
 const sectionMeta = {
@@ -26,6 +26,7 @@ const variantOptions = ["large", "wide"];
 let activeSection = "projects";
 let state = clone(siteData);
 let loadedContentSource = "static";
+let pendingAuthResolve = null;
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -49,6 +50,14 @@ function loadDraft() {
 function saveDraft() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(prepareSiteDataForSave(state)));
   setStatus("草稿已保存在当前浏览器。");
+}
+
+function clearLegacyAdminToken() {
+  try {
+    localStorage.removeItem(LEGACY_ADMIN_TOKEN_KEY);
+  } catch {
+    // Legacy cleanup is best effort only.
+  }
 }
 
 async function loadCurrentContent() {
@@ -339,42 +348,73 @@ function escapeAttr(value) {
   return escapeText(value).replaceAll('"', "&quot;");
 }
 
-function getStoredAdminToken() {
-  try {
-    return localStorage.getItem(ADMIN_TOKEN_KEY) || "";
-  } catch {
-    return "";
-  }
+function getAuthDialogParts() {
+  return {
+    dialog: document.querySelector("[data-auth-dialog]"),
+    form: document.querySelector("[data-auth-form]"),
+    password: document.querySelector("[data-auth-password]"),
+    trust: document.querySelector("[data-auth-trust]"),
+    message: document.querySelector("[data-auth-message]"),
+    submit: document.querySelector("[data-auth-submit]"),
+  };
 }
 
-function storeAdminToken(token) {
-  try {
-    if (token) localStorage.setItem(ADMIN_TOKEN_KEY, token);
-  } catch {
-    // Saving can still proceed for this request even if localStorage is unavailable.
-  }
+function resolveAuthDialog(value) {
+  if (!pendingAuthResolve) return;
+  const resolve = pendingAuthResolve;
+  pendingAuthResolve = null;
+  resolve(value);
 }
 
-function clearAdminToken() {
-  try {
-    localStorage.removeItem(ADMIN_TOKEN_KEY);
-  } catch {
-    // Nothing to clear when localStorage is unavailable.
-  }
+function requestAdminSession() {
+  const { dialog, password, trust, message, submit } = getAuthDialogParts();
+  if (!dialog || !password || !trust || !message || !submit) return Promise.resolve(false);
+
+  password.value = "";
+  trust.checked = false;
+  message.textContent = "";
+  submit.disabled = false;
+
+  if (!dialog.open) dialog.showModal();
+  window.setTimeout(() => password.focus(), 0);
+
+  return new Promise((resolve) => {
+    pendingAuthResolve = resolve;
+  });
 }
 
-function askAdminToken() {
-  const token = window.prompt("请输入后台保存口令。")?.trim() || "";
-  storeAdminToken(token);
-  return token;
+async function loginAdmin(password, trustDevice) {
+  const response = await fetch("/api/admin-session", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password, trustDevice }),
+  });
+  const payload = await response.json().catch(() => ({}));
+  return { response, payload };
 }
 
-async function putOnline(token = "") {
+async function refreshAdminSession() {
+  await fetch("/api/admin-session", {
+    method: "GET",
+    credentials: "same-origin",
+  }).catch(() => null);
+}
+
+async function clearDeviceSession() {
+  await fetch("/api/admin-session", {
+    method: "DELETE",
+    credentials: "same-origin",
+  }).catch(() => null);
+  setStatus("已清除此设备授权。下次保存会重新要求输入口令。");
+}
+
+async function putOnline() {
   const headers = { "Content-Type": "application/json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
 
   const response = await fetch("/api/site-data", {
     method: "PUT",
+    credentials: "same-origin",
     headers,
     body: JSON.stringify(prepareSiteDataForSave(state)),
   });
@@ -390,17 +430,15 @@ async function saveOnline() {
 
   setStatus("正在保存到线上。");
 
-  let token = getStoredAdminToken();
-  let result = await putOnline(token);
+  let result = await putOnline();
 
   if (result.response.status === 401) {
-    clearAdminToken();
-    token = askAdminToken();
-    if (!token) {
+    const authorized = await requestAdminSession();
+    if (!authorized) {
       setStatus("没有保存：需要后台保存口令。");
       return;
     }
-    result = await putOnline(token);
+    result = await putOnline();
   }
 
   if (!result.response.ok) {
@@ -472,6 +510,8 @@ document.addEventListener("click", async (event) => {
     downloadDataFile();
   } else if (action === "reset-draft") {
     await restoreOnlineContent();
+  } else if (action === "clear-session") {
+    await clearDeviceSession();
   } else if (action === "add-item") {
     state[activeSection].push(getDefaults(activeSection));
     normalizeOrder(activeSection);
@@ -511,5 +551,41 @@ document.querySelector(".preview-panel").addEventListener("click", (event) => {
   if (event.target.closest("a")) event.preventDefault();
 });
 
+document.querySelector("[data-auth-form]").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const { dialog, password, trust, message, submit } = getAuthDialogParts();
+  const token = password.value.trim();
+  if (!token) {
+    message.textContent = "请输入后台口令。";
+    return;
+  }
+
+  submit.disabled = true;
+  message.textContent = "正在授权。";
+  const result = await loginAdmin(token, trust.checked);
+  submit.disabled = false;
+
+  if (!result.response.ok) {
+    message.textContent = result.payload.error || "授权失败。";
+    return;
+  }
+
+  dialog.close();
+  setStatus(trust.checked ? "已授权，并信任这台设备。" : "已授权，3 小时内可保存。");
+  resolveAuthDialog(true);
+});
+
+document.querySelector("[data-auth-cancel]").addEventListener("click", () => {
+  const { dialog } = getAuthDialogParts();
+  dialog.close();
+  resolveAuthDialog(false);
+});
+
+document.querySelector("[data-auth-dialog]").addEventListener("cancel", () => {
+  resolveAuthDialog(false);
+});
+
 render();
+clearLegacyAdminToken();
 loadCurrentContent();
+refreshAdminSession();

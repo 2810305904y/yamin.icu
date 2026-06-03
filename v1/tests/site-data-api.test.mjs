@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 import { siteData } from "../content/site-data.mjs";
+import { handleAdminSessionRequest } from "../../api/admin-auth.mjs";
 import { handleSiteDataBackupRequest, handleSiteDataRequest } from "../../api/site-data-store.mjs";
 
 test("site data API reads bundled content when no database or local copy exists", async () => {
@@ -145,6 +146,117 @@ test("site data API creates Supabase backups around online writes", async () => 
   assert.equal(backupBodies[1].thought_count, nextData.thoughts.length);
 });
 
+test("admin session login stores only a token hash and sets an HttpOnly cookie", async () => {
+  const calls = [];
+  const response = await handleAdminSessionRequest({
+    method: "POST",
+    headers: {
+      "User-Agent": "test-browser",
+    },
+    body: JSON.stringify({ password: "secret", trustDevice: true }),
+    env: {
+      VERCEL: "1",
+      SITE_ADMIN_TOKEN: "secret",
+      SUPABASE_URL: "https://example.supabase.co",
+      SUPABASE_SERVICE_ROLE_KEY: "service-key",
+    },
+    fetchFn: async (url, options) => {
+      calls.push({ url, options });
+      return {
+        ok: true,
+        json: async () => [],
+      };
+    },
+  });
+  const body = JSON.parse(response.body);
+  const sessionRecord = JSON.parse(calls[0].options.body);
+  const setCookie = response.headers["Set-Cookie"][0];
+
+  assert.equal(response.status, 200);
+  assert.equal(body.authenticated, true);
+  assert.equal(body.trusted, true);
+  assert.equal(calls[0].url, "https://example.supabase.co/rest/v1/admin_sessions");
+  assert.equal(sessionRecord.token_hash.length, 64);
+  assert.notEqual(sessionRecord.token_hash, "secret");
+  assert.equal(sessionRecord.trusted, true);
+  assert.match(setCookie, /yamin_admin_session=/);
+  assert.match(setCookie, /HttpOnly/);
+  assert.match(setCookie, /Secure/);
+  assert.match(setCookie, /SameSite=Lax/);
+  assert.match(setCookie, /Max-Age=15552000/);
+});
+
+test("site data API accepts a trusted admin session cookie and renews it", async () => {
+  const loginCalls = [];
+  const loginResponse = await handleAdminSessionRequest({
+    method: "POST",
+    headers: {},
+    body: JSON.stringify({ password: "secret", trustDevice: true }),
+    env: {
+      VERCEL: "1",
+      SITE_ADMIN_TOKEN: "secret",
+      SUPABASE_URL: "https://example.supabase.co",
+      SUPABASE_SERVICE_ROLE_KEY: "service-key",
+    },
+    fetchFn: async (url, options) => {
+      loginCalls.push({ url, options });
+      return {
+        ok: true,
+        json: async () => [],
+      };
+    },
+  });
+  const cookie = loginResponse.headers["Set-Cookie"][0].split(";")[0];
+  const sessionRecord = JSON.parse(loginCalls[0].options.body);
+  const calls = [];
+
+  const response = await handleSiteDataRequest({
+    method: "PUT",
+    headers: {
+      Cookie: cookie,
+    },
+    body: JSON.stringify(siteData),
+    env: {
+      VERCEL: "1",
+      SITE_ADMIN_TOKEN: "secret",
+      SUPABASE_URL: "https://example.supabase.co",
+      SUPABASE_SERVICE_ROLE_KEY: "service-key",
+    },
+    fallbackData: siteData,
+    fetchFn: async (url, options) => {
+      calls.push({ url, options });
+      if (url.includes("/rest/v1/admin_sessions") && options.method === "GET") {
+        return {
+          ok: true,
+          json: async () => [{
+            id: sessionRecord.id,
+            token_hash: sessionRecord.token_hash,
+            trusted: true,
+            expires_at: sessionRecord.expires_at,
+            revoked_at: null,
+          }],
+        };
+      }
+      if (options.method === "GET") {
+        return {
+          ok: true,
+          json: async () => [{ data: siteData }],
+        };
+      }
+      return {
+        ok: true,
+        json: async () => [],
+      };
+    },
+  });
+  const sessionPatch = calls.find((call) => call.url.includes("/rest/v1/admin_sessions") && call.options.method === "PATCH");
+
+  assert.equal(response.status, 200);
+  assert.match(response.headers["Set-Cookie"][0], /yamin_admin_session=/);
+  assert.ok(sessionPatch);
+  assert.ok(JSON.parse(sessionPatch.options.body).expires_at);
+});
+
 test("site data API stops online writes when the current Supabase data cannot be read", async () => {
   const calls = [];
   const response = await handleSiteDataRequest({
@@ -218,11 +330,16 @@ test("Supabase setup SQL keeps site data behind service-role writes", async () =
 
   assert.match(sql, /create table if not exists public\.site_pages/);
   assert.match(sql, /create table if not exists public\.site_page_backups/);
+  assert.match(sql, /create table if not exists public\.admin_sessions/);
   assert.match(sql, /site_page_backups_page_created_idx/);
+  assert.match(sql, /admin_sessions_token_hash_idx/);
   assert.match(sql, /alter table public\.site_pages enable row level security/);
   assert.match(sql, /alter table public\.site_page_backups enable row level security/);
+  assert.match(sql, /alter table public\.admin_sessions enable row level security/);
   assert.match(sql, /revoke all on table public\.site_pages from anon, authenticated/);
   assert.match(sql, /revoke all on table public\.site_page_backups from anon, authenticated/);
+  assert.match(sql, /revoke all on table public\.admin_sessions from anon, authenticated/);
   assert.match(sql, /grant select, insert, update on table public\.site_pages to service_role/);
   assert.match(sql, /grant select, insert on table public\.site_page_backups to service_role/);
+  assert.match(sql, /grant select, insert, update on table public\.admin_sessions to service_role/);
 });

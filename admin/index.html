@@ -6,8 +6,8 @@
     <meta name="robots" content="noindex,nofollow" />
     <title>鸦珉.icu - 内容编辑台</title>
     <link rel="stylesheet" href="/v1/styles.css" />
-    <link rel="stylesheet" href="/admin/styles.css?v=1.4.1-data-safety" />
-    <script type="module" src="/admin/admin.mjs?v=1.4.1-data-safety"></script>
+    <link rel="stylesheet" href="/admin/styles.css?v=1.4.2-admin-session" />
+    <script type="module" src="/admin/admin.mjs?v=1.4.2-admin-session"></script>
     <script>
       window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
     </script>
@@ -17,7 +17,7 @@
     <main class="admin-shell">
       <header class="admin-topbar">
         <div>
-          <p class="admin-kicker">V1.4.1</p>
+          <p class="admin-kicker">V1.4.2</p>
           <h1>内容编辑台</h1>
         </div>
         <div class="admin-actions" aria-label="全局操作">
@@ -25,10 +25,31 @@
           <button type="button" data-action="save-online">保存到线上</button>
           <button type="button" data-action="download">下载数据文件</button>
           <button type="button" class="ghost-button" data-action="reset-draft">恢复线上内容</button>
+          <button type="button" class="ghost-button subtle-button" data-action="clear-session">清除此设备授权</button>
         </div>
       </header>
 
       <section class="admin-status" data-status>正在加载当前内容。</section>
+
+      <dialog class="auth-dialog" data-auth-dialog>
+        <form class="auth-card" data-auth-form>
+          <h2>后台授权</h2>
+          <p>输入后台口令后会继续保存，当前草稿不会丢。</p>
+          <label class="field">
+            <span>后台口令</span>
+            <input type="password" autocomplete="current-password" data-auth-password />
+          </label>
+          <label class="auth-trust">
+            <input type="checkbox" data-auth-trust />
+            <span>信任这台设备</span>
+          </label>
+          <p class="auth-message" data-auth-message></p>
+          <div class="auth-actions">
+            <button type="button" class="ghost-button" data-auth-cancel>取消</button>
+            <button type="submit" data-auth-submit>继续保存</button>
+          </div>
+        </form>
+      </dialog>
 
       <section class="admin-workbench">
         <aside class="admin-sidebar" aria-label="编辑分区">

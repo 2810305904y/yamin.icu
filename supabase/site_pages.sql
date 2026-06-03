@@ -41,3 +41,25 @@ alter table public.site_page_backups enable row level security;
 
 revoke all on table public.site_page_backups from anon, authenticated;
 grant select, insert on table public.site_page_backups to service_role;
+
+create table if not exists public.admin_sessions (
+  id text primary key,
+  token_hash text not null unique,
+  trusted boolean not null default false,
+  user_agent text not null default '',
+  created_at timestamptz not null default now(),
+  last_seen_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  revoked_at timestamptz
+);
+
+create index if not exists admin_sessions_token_hash_idx
+on public.admin_sessions (token_hash);
+
+create index if not exists admin_sessions_expires_at_idx
+on public.admin_sessions (expires_at);
+
+alter table public.admin_sessions enable row level security;
+
+revoke all on table public.admin_sessions from anon, authenticated;
+grant select, insert, update on table public.admin_sessions to service_role;

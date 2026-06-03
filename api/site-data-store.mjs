@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
+import { authorizeAdminRequest, authorizeCronOrAdminRequest } from "./admin-auth.mjs";
 
 const DEFAULT_TABLE = "site_pages";
 const DEFAULT_BACKUP_TABLE = "site_page_backups";
@@ -11,30 +12,19 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
-function jsonResponse(status, body) {
+function jsonResponse(status, body, headers = {}) {
   return {
     status,
     headers: {
       "Content-Type": "application/json; charset=utf-8",
+      ...headers,
     },
     body: JSON.stringify(body),
   };
 }
 
-function getHeader(headers, name) {
-  if (!headers) return "";
-  if (typeof headers.get === "function") return headers.get(name) || "";
-
-  const lowerName = name.toLowerCase();
-  const entry = Object.entries(headers).find(([key]) => key.toLowerCase() === lowerName);
-  const value = entry?.[1];
-  return Array.isArray(value) ? value[0] || "" : value || "";
-}
-
-function getAdminToken(headers) {
-  const bearer = getHeader(headers, "Authorization");
-  if (bearer.startsWith("Bearer ")) return bearer.slice(7).trim();
-  return getHeader(headers, "X-Admin-Token").trim();
+function authHeaders(auth = {}) {
+  return auth.setCookie ? { "Set-Cookie": Array.isArray(auth.setCookie) ? auth.setCookie : [auth.setCookie] } : {};
 }
 
 function hasSupabaseConfig(env = {}) {
@@ -203,18 +193,6 @@ function parseRequestPayload(body) {
   return body || {};
 }
 
-function canWrite(headers, env = {}) {
-  const expected = env.SITE_ADMIN_TOKEN;
-  if (!expected) return !env.VERCEL;
-  return getAdminToken(headers) === expected;
-}
-
-function canRunBackup(headers, env = {}) {
-  const cronSecret = env.CRON_SECRET;
-  if (cronSecret && getAdminToken(headers) === cronSecret) return true;
-  return canWrite(headers, env);
-}
-
 export async function handleSiteDataRequest({
   method,
   headers,
@@ -250,8 +228,9 @@ export async function handleSiteDataRequest({
   }
 
   if (method === "PUT") {
-    if (!canWrite(headers, env)) {
-      return jsonResponse(401, { error: "需要后台保存口令。" });
+    const auth = await authorizeAdminRequest({ headers, env, fetchFn });
+    if (!auth.ok) {
+      return jsonResponse(401, { error: "需要后台保存口令。" }, authHeaders(auth));
     }
 
     let nextData;
@@ -264,7 +243,7 @@ export async function handleSiteDataRequest({
     if (hasSupabaseConfig(env)) {
       try {
         const backup = await writeSupabaseDataWithBackups(nextData, { env, fetchFn });
-        return jsonResponse(200, { source: "supabase", data: nextData, backup });
+        return jsonResponse(200, { source: "supabase", data: nextData, backup }, authHeaders(auth));
       } catch (error) {
         return jsonResponse(502, { error: error.message });
       }
@@ -275,7 +254,7 @@ export async function handleSiteDataRequest({
     }
 
     await writeLocalData(nextData);
-    return jsonResponse(200, { source: "local", data: nextData });
+    return jsonResponse(200, { source: "local", data: nextData }, authHeaders(auth));
   }
 
   return jsonResponse(405, { error: "不支持这个请求方式。" });
@@ -296,8 +275,9 @@ export async function handleSiteDataBackupRequest({
     return jsonResponse(405, { error: "不支持这个请求方式。" });
   }
 
-  if (!canRunBackup(headers, env)) {
-    return jsonResponse(401, { error: "需要后台备份口令。" });
+  const auth = await authorizeCronOrAdminRequest({ headers, env, fetchFn });
+  if (!auth.ok) {
+    return jsonResponse(401, { error: "需要后台备份口令。" }, authHeaders(auth));
   }
 
   if (!hasSupabaseConfig(env)) {
@@ -319,7 +299,7 @@ export async function handleSiteDataBackupRequest({
     if (!currentData) return jsonResponse(404, { error: "没有找到可备份的线上数据。" });
 
     const backup = await writeSupabaseBackup(currentData, reason, { env, fetchFn });
-    return jsonResponse(200, { source: "supabase", backup });
+    return jsonResponse(200, { source: "supabase", backup }, authHeaders(auth));
   } catch (error) {
     return jsonResponse(502, { error: error.message });
   }
