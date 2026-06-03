@@ -460,7 +460,7 @@ svg {
 }
 
 .project-card-wide .project-name {
-  font-size: calc(25px * var(--map-content-scale));
+  font-size: calc(24px * var(--map-content-scale));
 }
 
 .project-copy {
@@ -741,7 +741,7 @@ svg {
 .thought-space {
   position: absolute;
   z-index: 4;
-  inset: 18px 40px -40px 64px;
+  inset: -20px 40px -20px 64px;
   overflow: hidden;
   border-radius: 20px;
   pointer-events: none;
@@ -866,8 +866,8 @@ svg {
 .social-list a {
   grid-template-columns: calc(12px * var(--map-content-scale)) minmax(0, 1fr) auto;
   gap: calc(12px * var(--map-content-scale));
-  min-height: calc(48px * var(--map-content-scale));
-  padding: calc(8px * var(--map-content-scale)) calc(14px * var(--map-content-scale));
+  min-height: calc(42px * var(--map-content-scale));
+  padding: calc(6px * var(--map-content-scale)) calc(14px * var(--map-content-scale));
   border-radius: calc(13px * var(--map-content-scale));
   color: var(--ink);
   text-decoration: none;

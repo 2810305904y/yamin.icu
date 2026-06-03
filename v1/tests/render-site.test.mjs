@@ -417,7 +417,7 @@ test("homepage uses a fixed 2:1 design canvas inside a scaled viewport shell", a
   assert.match(styles, /\.project-card-wide\s*{[^}]*width:\s*calc\(100% - 12px\)/s);
   assert.match(styles, /\.project-card-wide\s*{[^}]*justify-self:\s*center/s);
   assert.match(styles, /\.project-card-wide\s*{[^}]*grid-template-columns:\s*calc\(76px \* var\(--map-content-scale\)\) minmax\(0,\s*1fr\) auto/s);
-  assert.match(styles, /\.project-card-wide \.project-name\s*{[^}]*font-size:\s*calc\(25px \* var\(--map-content-scale\)\)/s);
+  assert.match(styles, /\.project-card-wide \.project-name\s*{[^}]*font-size:\s*calc\(24px \* var\(--map-content-scale\)\)/s);
   assert.match(styles, /\.project-card-wide \.project-copy\s*{[^}]*font-size:\s*calc\(16px \* var\(--map-content-scale\)\)/s);
   assert.doesNotMatch(styles, /\.projects-grid\s*{[^}]*width:\s*92%/s);
   assert.doesNotMatch(styles, /\.projects-grid\s*{[^}]*justify-self:\s*start/s);
@@ -426,10 +426,10 @@ test("homepage uses a fixed 2:1 design canvas inside a scaled viewport shell", a
   assert.match(styles, /\.panel-social\s*{[^}]*padding:\s*34px 58px/s);
   assert.match(styles, /\.social-list\s*{[^}]*gap:\s*calc\(8px \* var\(--map-content-scale\)\)/s);
   assert.match(styles, /\.social-list\s*{[^}]*padding-right:\s*8px/s);
-  assert.match(styles, /\.social-list a\s*{[^}]*min-height:\s*calc\(48px \* var\(--map-content-scale\)\)/s);
-  assert.match(styles, /\.social-list a\s*{[^}]*padding:\s*calc\(8px \* var\(--map-content-scale\)\)\s*calc\(14px \* var\(--map-content-scale\)\)/s);
+  assert.match(styles, /\.social-list a\s*{[^}]*min-height:\s*calc\(42px \* var\(--map-content-scale\)\)/s);
+  assert.match(styles, /\.social-list a\s*{[^}]*padding:\s*calc\(6px \* var\(--map-content-scale\)\)\s*calc\(14px \* var\(--map-content-scale\)\)/s);
   assert.match(styles, /\.social-list a\s*{[^}]*font-size:\s*calc\(18px \* var\(--map-content-scale\)\)/s);
-  assert.match(styles, /\.thought-space\s*{[^}]*inset:\s*18px\s*40px\s*-40px\s*64px/s);
+  assert.match(styles, /\.thought-space\s*{[^}]*inset:\s*-20px\s*40px\s*-20px\s*64px/s);
   assert.match(styles, /\.thought-space \.thought-pill\s*{[^}]*width:\s*max-content/s);
   assert.match(styles, /\.thought-space \.thought-pill\s*{[^}]*white-space:\s*nowrap/s);
   assert.match(script, /const MAP_VIEWPORT_MARGIN = 44/);

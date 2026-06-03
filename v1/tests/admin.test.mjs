@@ -94,8 +94,8 @@ test("admin shell sits above the shared cloud background", async () => {
   assert.match(styles, /\.admin-shell\s*{[^}]*z-index:\s*1/s);
   assert.match(styles, /\.admin-shell\s*{[^}]*background:\s*rgba\(255, 255, 255, 0\.94\)/s);
   assert.match(styles, /\.editor-panel,[\s\S]*?\.preview-panel\s*{[^}]*background:\s*rgba\(255, 255, 255, 0\.93\)/s);
-  assert.match(html, /\/admin\/styles\.css\?v=1\.4\.2-admin-session/);
-  assert.match(html, /\/admin\/admin\.mjs\?v=1\.4\.2-admin-session/);
+  assert.match(html, /\/admin\/styles\.css\?v=1\.4\.3-homepage-label-bounds/);
+  assert.match(html, /\/admin\/admin\.mjs\?v=1\.4\.3-homepage-label-bounds/);
 });
 
 test("homepage cloud layer sits below the translucent map frame", async () => {
@@ -137,19 +137,23 @@ test("project cards keep a slightly slimmer desktop footprint", async () => {
   assert.match(siteStyles, /\.project-card-wide\s*{[^}]*width:\s*calc\(100% - 12px\)/s);
   assert.match(siteStyles, /\.project-card-wide\s*{[^}]*justify-self:\s*center/s);
   assert.match(siteStyles, /\.project-card-wide\s*{[^}]*grid-template-columns:\s*calc\(76px \* var\(--map-content-scale\)\) minmax\(0,\s*1fr\) auto/s);
-  assert.match(siteStyles, /\.project-card-wide \.project-name\s*{[^}]*font-size:\s*calc\(25px \* var\(--map-content-scale\)\)/s);
+  assert.match(siteStyles, /\.project-card-wide \.project-name\s*{[^}]*font-size:\s*calc\(24px \* var\(--map-content-scale\)\)/s);
   assert.match(siteStyles, /\.project-link\s*{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/s);
   assert.doesNotMatch(siteStyles, /\.project-link span:last-child/);
   assert.doesNotMatch(siteStyles, /\.projects-grid\s*{[^}]*width:\s*92%/s);
   assert.doesNotMatch(siteStyles, /\.projects-grid\s*{[^}]*justify-self:\s*start/s);
   assert.doesNotMatch(siteStyles, /grid-template-columns:\s*minmax\(180px,\s*0\.86fr\)\s*minmax\(180px,\s*0\.86fr\)\s*minmax\(280px,\s*1\.2fr\)/);
   assert.doesNotMatch(siteStyles, /grid-template-columns:\s*minmax\(210px,\s*1fr\)\s*minmax\(210px,\s*1fr\)\s*minmax\(280px,\s*1\.28fr\)/);
-  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.4\.0-desktop-map-final/);
-  assert.match(rootHtml, /\/v1\/scripts\/render-site\.mjs\?v=1\.4\.0-desktop-map-final/);
+  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.4\.3-homepage-label-bounds/);
+  assert.match(rootHtml, /\/v1\/scripts\/render-site\.mjs\?v=1\.4\.3-homepage-label-bounds/);
+  assert.match(rootHtml, /<span id="todos-title">施工中<\/span>/);
+  assert.match(rootHtml, /<span id="thoughts-title">怪念头<\/span>/);
   assert.match(rootHtml, /<script nomodule>/);
   assert.match(rootHtml, /window\.location\.replace\("\/v1\/"\)/);
-  assert.match(v1Html, /\.\/styles\.css\?v=1\.4\.0-desktop-map-final/);
-  assert.match(v1Html, /\.\/scripts\/render-site\.mjs\?v=1\.4\.0-desktop-map-final/);
+  assert.match(v1Html, /\.\/styles\.css\?v=1\.4\.3-homepage-label-bounds/);
+  assert.match(v1Html, /\.\/scripts\/render-site\.mjs\?v=1\.4\.3-homepage-label-bounds/);
+  assert.match(v1Html, /<span id="todos-title">施工中<\/span>/);
+  assert.match(v1Html, /<span id="thoughts-title">怪念头<\/span>/);
 });
 
 test("version naming uses the new three-part small release format", async () => {
@@ -158,18 +162,19 @@ test("version naming uses the new three-part small release format", async () => 
   const namingRules = await readFile("项目进度/2026-06-01_版本命名规则.md", "utf8");
 
   assert.match(readme, /当前阶段：V1\.4/);
-  assert.match(readme, /当前小版本：V1\.4\.2/);
+  assert.match(readme, /当前小版本：V1\.4\.3/);
   assert.match(readme, /当前主页视觉基准（V1\.4）/);
   assert.match(readme, /2400 x 1200/);
   assert.match(readme, /site_page_backups/);
   assert.match(readme, /CRON_SECRET/);
   assert.match(readme, /admin_sessions/);
   assert.match(readme, /HttpOnly cookie/);
-  assert.match(adminHtml, /<p class="admin-kicker">V1\.4\.2<\/p>/);
+  assert.match(adminHtml, /<p class="admin-kicker">V1\.4\.3<\/p>/);
   assert.match(namingRules, /当前阶段记为 `V1\.4`/);
   assert.match(namingRules, /V1\.4\.0\s*->\s*V1\.4 阶段的视觉定稿起点/);
   assert.match(namingRules, /V1\.4\.1\s*->\s*后台保存保护与数据备份补丁/);
   assert.match(namingRules, /V1\.4\.2\s*->\s*后台短会话与可信设备授权/);
+  assert.match(namingRules, /V1\.4\.3\s*->\s*主页标题文案、念头边界和频道条高度小调/);
   assert.match(namingRules, /三段式/);
 });
 
@@ -191,8 +196,8 @@ test("social links match todo row width rhythm", async () => {
   assert.match(siteStyles, /\.panel-social\s*{[^}]*padding:\s*34px 58px/s);
   assert.match(siteStyles, /\.social-list\s*{[^}]*gap:\s*calc\(8px \* var\(--map-content-scale\)\)/s);
   assert.match(siteStyles, /\.social-list\s*{[^}]*padding-right:\s*8px/s);
-  assert.match(siteStyles, /\.social-list a\s*{[^}]*min-height:\s*calc\(48px \* var\(--map-content-scale\)\)/s);
-  assert.match(siteStyles, /\.social-list a\s*{[^}]*padding:\s*calc\(8px \* var\(--map-content-scale\)\)\s*calc\(14px \* var\(--map-content-scale\)\)/s);
+  assert.match(siteStyles, /\.social-list a\s*{[^}]*min-height:\s*calc\(42px \* var\(--map-content-scale\)\)/s);
+  assert.match(siteStyles, /\.social-list a\s*{[^}]*padding:\s*calc\(6px \* var\(--map-content-scale\)\)\s*calc\(14px \* var\(--map-content-scale\)\)/s);
   assert.match(siteStyles, /\.social-list a\s*{[^}]*font-size:\s*calc\(18px \* var\(--map-content-scale\)\)/s);
   assert.match(siteStyles, /\.social-mark\s*{[^}]*width:\s*calc\(12px \* var\(--map-content-scale\)\)/s);
   assert.match(siteStyles, /\.social-mark\s*{[^}]*height:\s*calc\(12px \* var\(--map-content-scale\)\)/s);
@@ -206,7 +211,7 @@ test("thought area is prepared as a bounded motion space", async () => {
   assert.match(siteStyles, /\.thought-space\s*{[^}]*position:\s*absolute/s);
   assert.match(siteStyles, /\.thought-space\s*{[^}]*overflow:\s*hidden/s);
   assert.match(siteStyles, /\.panel-thoughts \.section-title-small\s*{[^}]*transform:\s*translateY\(-18px\)/s);
-  assert.match(siteStyles, /\.thought-space\s*{[^}]*inset:\s*18px\s*40px\s*-40px\s*64px/s);
+  assert.match(siteStyles, /\.thought-space\s*{[^}]*inset:\s*-20px\s*40px\s*-20px\s*64px/s);
   assert.match(siteStyles, /\.thought-space \.thought-pill\s*{[^}]*width:\s*max-content/s);
   assert.match(siteStyles, /\.thought-space \.thought-pill\s*{[^}]*white-space:\s*nowrap/s);
   assert.match(siteStyles, /\.thought-space \.thought-pill\s*{[^}]*will-change:\s*transform,\s*opacity/s);
