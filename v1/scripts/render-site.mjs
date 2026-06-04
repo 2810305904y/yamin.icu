@@ -38,6 +38,7 @@ const iconMap = {
 
 const thoughtSpaceCleanups = new WeakMap();
 const THOUGHT_BOUND_PADDING = 40;
+const THOUGHT_COMPACT_BOUND_PADDING = 52;
 const THOUGHT_MIN_VISIBLE = 7;
 const THOUGHT_MAX_VISIBLE = 8;
 const THOUGHT_COMPACT_MIN_VISIBLE = 7;
@@ -222,18 +223,18 @@ function thoughtSize(item) {
   };
 }
 
-function thoughtAxisRange(axisSize, itemSize) {
-  const padding = Math.min(THOUGHT_BOUND_PADDING, Math.max(0, (axisSize - itemSize) / 2));
+function thoughtAxisRange(axisSize, itemSize, padding = THOUGHT_BOUND_PADDING) {
+  const edgePadding = Math.min(padding, Math.max(0, (axisSize - itemSize) / 2));
   return {
-    min: padding,
-    max: Math.max(padding, axisSize - itemSize - padding),
+    min: edgePadding,
+    max: Math.max(edgePadding, axisSize - itemSize - edgePadding),
   };
 }
 
 function clampThoughtPosition(item, bounds) {
   const size = thoughtSize(item);
-  const xRange = thoughtAxisRange(bounds.width, size.width);
-  const yRange = thoughtAxisRange(bounds.height, size.height);
+  const xRange = thoughtAxisRange(bounds.width, size.width, bounds.padding);
+  const yRange = thoughtAxisRange(bounds.height, size.height, bounds.padding);
   item.x = Math.min(Math.max(item.x, xRange.min), xRange.max);
   item.y = Math.min(Math.max(item.y, yRange.min), yRange.max);
 }
@@ -278,8 +279,8 @@ export function stepThoughtPhysics(items, bounds, dt) {
     item.y += item.vy * dt;
     item.rotation = (item.rotation == null ? 0 : item.rotation) + item.rotationSpeed * dt;
 
-    const xRange = thoughtAxisRange(bounds.width, size.width);
-    const yRange = thoughtAxisRange(bounds.height, size.height);
+    const xRange = thoughtAxisRange(bounds.width, size.width, bounds.padding);
+    const yRange = thoughtAxisRange(bounds.height, size.height, bounds.padding);
 
     if (item.x <= xRange.min) {
       item.x = xRange.min;
@@ -394,7 +395,7 @@ export function renderThoughts(thoughts) {
     .join("");
 }
 
-function readThoughtBounds(container) {
+function readThoughtBounds(container, options = {}) {
   const rect =
     typeof container.getBoundingClientRect === "function" ? container.getBoundingClientRect() : { width: 0, height: 0 };
   const layoutWidth = container.offsetWidth || container.clientWidth || rect.width;
@@ -403,6 +404,7 @@ function readThoughtBounds(container) {
   return {
     width: Math.max(1, layoutWidth),
     height: Math.max(1, layoutHeight),
+    padding: options.compact === true ? THOUGHT_COMPACT_BOUND_PADDING : THOUGHT_BOUND_PADDING,
   };
 }
 
@@ -436,8 +438,8 @@ function resetThoughtMotion(item, random, bounds, options = {}) {
   item.rotationSpeed = randomBetween(random, -8, 8);
 
   const size = thoughtSize(item);
-  const xRange = thoughtAxisRange(bounds.width, size.width);
-  const yRange = thoughtAxisRange(bounds.height, size.height);
+  const xRange = thoughtAxisRange(bounds.width, size.width, bounds.padding);
+  const yRange = thoughtAxisRange(bounds.height, size.height, bounds.padding);
   item.x = randomBetween(random, xRange.min, xRange.max);
   item.y = randomBetween(random, yRange.min, yRange.max);
   item.vx = randomBetween(random, 18, 46) * speedScale * (random() > 0.5 ? 1 : -1);
@@ -503,7 +505,7 @@ export function initThoughtSpace(container) {
   const minVisible = visibilityRange.min;
   const maxVisible = visibilityRange.max;
   const initialActiveFlags = createInitialThoughtActiveFlags(elements.length, random, compactOptions);
-  let bounds = readThoughtBounds(container);
+  let bounds = readThoughtBounds(container, { compact: compactMotion });
   let frameId = 0;
   let lastTime = 0;
   let visibilityTimer = 0;
@@ -531,14 +533,14 @@ export function initThoughtSpace(container) {
   function scheduleVisibilityToggle() {
     if (!motionAllowed || items.length < 2) return;
     visibilityTimer = window.setTimeout(() => {
-      bounds = readThoughtBounds(container);
+      bounds = readThoughtBounds(container, { compact: compactMotion });
       toggleThoughtVisibility(items, random, bounds, minVisible, maxVisible, pickThoughtTone, compactOptions);
       scheduleVisibilityToggle();
     }, randomBetween(random, THOUGHT_MIN_TOGGLE_DELAY, THOUGHT_MAX_TOGGLE_DELAY));
   }
 
   function draw(time = 0) {
-    bounds = readThoughtBounds(container);
+    bounds = readThoughtBounds(container, { compact: compactMotion });
     const dt = lastTime ? Math.min((time - lastTime) / 1000, 0.04) : 0;
     lastTime = time;
 
@@ -570,7 +572,7 @@ export function initThoughtSpace(container) {
     typeof ResizeObserver === "undefined"
       ? null
       : new ResizeObserver(() => {
-          bounds = readThoughtBounds(container);
+          bounds = readThoughtBounds(container, { compact: compactMotion });
           items.forEach((item) => {
             measureThoughtItem(item);
             clampThoughtPosition(item, bounds);

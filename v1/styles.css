@@ -1264,23 +1264,25 @@ svg {
 
   .site-signature {
     position: static;
+    order: 0;
     gap: 6px;
-    margin: 24px 0 0;
+    margin: 0;
+    padding: 24px 18px 4px;
   }
 
   .site-signature span {
-    font-size: 26px;
+    font-size: 36px;
   }
 
   .site-signature small {
-    font-size: 13px;
+    font-size: 14px;
   }
 
   .thought-space {
     position: relative;
     inset: auto;
     width: 100%;
-    height: 430px;
+    height: 520px;
     margin-top: 18px;
     border: 1px solid rgba(96, 165, 250, 0.32);
     border-radius: 18px;
