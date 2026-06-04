@@ -236,7 +236,7 @@ test("thought bounds use the unscaled layout box inside the scaled map", async (
     "THOUGHT_BOUND_PADDING",
     "THOUGHT_COMPACT_BOUND_PADDING",
     `return function readThoughtBounds(container, options = {}) {${match[1]}\n};`,
-  )(40, 52);
+  )(40, 56);
   const bounds = readThoughtBounds({
     offsetWidth: 1120,
     offsetHeight: 250,
@@ -252,12 +252,15 @@ test("thought bounds use the unscaled layout box inside the scaled map", async (
   });
 });
 
-test("compact thought bounds use a larger symmetric edge padding", async () => {
+test("compact thought bounds keep long labels inside symmetric edge padding", async () => {
   const script = await readFile("v1/scripts/render-site.mjs", "utf8");
+  const styles = await readFile("v1/styles.css", "utf8");
 
-  assert.match(script, /const THOUGHT_COMPACT_BOUND_PADDING = 52/);
+  assert.match(script, /const THOUGHT_COMPACT_BOUND_PADDING = 56/);
   assert.match(script, /readThoughtBounds\(container,\s*\{ compact:\s*compactMotion \}\)/);
   assert.match(script, /padding:\s*options\.compact === true \? THOUGHT_COMPACT_BOUND_PADDING : THOUGHT_BOUND_PADDING/);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.thought-space \.thought-pill\s*{[\s\S]*max-width:\s*calc\(100% - 112px\)/s);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.thought-space \.thought-pill\s*{[\s\S]*text-overflow:\s*ellipsis/s);
 
   const match = script.match(/function thoughtAxisRange\(axisSize, itemSize, padding = THOUGHT_BOUND_PADDING\) \{([\s\S]*?)\n\}/);
   assert.ok(match);
@@ -267,9 +270,9 @@ test("compact thought bounds use a larger symmetric edge padding", async () => {
     `return function thoughtAxisRange(axisSize, itemSize, padding = THOUGHT_BOUND_PADDING) {${match[1]}\n};`,
   )(40);
 
-  assert.deepEqual(thoughtAxisRange(430, 120, 52), {
-    min: 52,
-    max: 258,
+  assert.deepEqual(thoughtAxisRange(430, 120, 56), {
+    min: 56,
+    max: 254,
   });
 });
 
@@ -424,7 +427,9 @@ test("site signature can become the first mobile logo without moving the desktop
   assert.match(styles, /\.site-signature\s*{[^}]*bottom:\s*38px/s);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.site-signature\s*{[\s\S]*order:\s*0/s);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.site-signature\s*{[\s\S]*padding:\s*24px 18px 4px/s);
-  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.site-signature span\s*{[\s\S]*font-size:\s*36px/s);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.site-signature\s*{[\s\S]*color:\s*#dbeafe/s);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.site-signature span\s*{[\s\S]*font-size:\s*42px/s);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.site-signature small\s*{[\s\S]*font-size:\s*16px/s);
 });
 
 test("homepage uses a fixed 2:1 design canvas inside a scaled viewport shell", async () => {
@@ -490,13 +495,13 @@ test("homepage uses a fixed 2:1 design canvas inside a scaled viewport shell", a
   assert.match(styles, /\.load-progress\s*{[^}]*height:\s*2px/s);
 });
 
-test("mobile homepage switches to a vertical V1.5.4 layout without changing the desktop canvas block", async () => {
+test("mobile homepage switches to a vertical V1.5.5 layout without changing the desktop canvas block", async () => {
   const rootHtml = await readFile("index.html", "utf8");
   const v1Html = await readFile("v1/index.html", "utf8");
   const styles = await readFile("v1/styles.css", "utf8");
 
-  assert.match(rootHtml, /v=1\.5\.4-mobile-thought-bounds/);
-  assert.match(v1Html, /v=1\.5\.4-mobile-thought-bounds/);
+  assert.match(rootHtml, /v=1\.5\.5-mobile-polish/);
+  assert.match(v1Html, /v=1\.5\.5-mobile-polish/);
   assert.match(styles, /@media \(max-width:\s*760px\)\s*{/);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body\s*{[\s\S]*overflow-y:\s*auto/s);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body::before\s*{[\s\S]*background-image:\s*none/s);
@@ -522,6 +527,8 @@ test("mobile homepage switches to a vertical V1.5.4 layout without changing the 
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.project-card-wide \.wide-icon,[\s\S]*\.project-card-wide \.round-arrow\s*{[\s\S]*display:\s*none/s);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.project-card-wide \.wide-content\s*{[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*auto/s);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.project-card-wide \.status\s*{[\s\S]*grid-area:\s*status/s);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.project-card-wide \.project-copy\s*{[\s\S]*white-space:\s*nowrap/s);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.project-card-wide \.project-copy\s*{[\s\S]*text-overflow:\s*ellipsis/s);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.thought-space\s*{[\s\S]*position:\s*relative/s);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.thought-space\s*{[\s\S]*height:\s*520px/s);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.panel-social \.visually-hidden\s*{[\s\S]*position:\s*relative !important/s);

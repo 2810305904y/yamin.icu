@@ -1215,6 +1215,9 @@ svg {
   .project-card-wide .project-copy {
     grid-area: copy;
     max-width: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font-size: 14px;
     line-height: 1.4;
   }
@@ -1268,14 +1271,15 @@ svg {
     gap: 6px;
     margin: 0;
     padding: 24px 18px 4px;
+    color: #dbeafe;
   }
 
   .site-signature span {
-    font-size: 36px;
+    font-size: 42px;
   }
 
   .site-signature small {
-    font-size: 14px;
+    font-size: 16px;
   }
 
   .thought-space {
@@ -1295,6 +1299,12 @@ svg {
     padding: 0 16px;
     font-size: 14px;
     box-shadow: 0 8px 18px rgba(37, 99, 235, 0.1);
+  }
+
+  .thought-space .thought-pill {
+    max-width: calc(100% - 112px);
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .panel-social .visually-hidden {
