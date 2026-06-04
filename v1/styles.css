@@ -1076,18 +1076,31 @@ svg {
 
   .project-card-large {
     grid-row: auto;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      "name status"
+      "copy status"
+      "link link";
     width: 100%;
-    min-height: 232px;
-    gap: 10px;
-    padding: 24px 18px 22px;
+    min-height: 156px;
+    align-content: center;
+    align-items: center;
+    justify-items: start;
+    gap: 8px 12px;
+    padding: 22px 18px 18px 58px;
+    text-align: left;
   }
 
   .project-card-large .project-name,
   .project-card-large .project-copy,
   .project-card-large .project-link,
-  .project-card-large .status,
-  .project-card-large .project-illustration {
+  .project-card-large .status {
     transform: none;
+  }
+
+  .project-card-large .project-illustration {
+    display: none;
   }
 
   .card-index {
@@ -1110,8 +1123,11 @@ svg {
   }
 
   .project-card-large .project-name {
+    grid-area: name;
     margin-top: 0;
-    margin-bottom: 2px;
+    margin-bottom: 0;
+    font-size: 28px;
+    line-height: 1.15;
   }
 
   .project-copy,
@@ -1119,6 +1135,12 @@ svg {
     max-width: 21em;
     font-size: 14px;
     line-height: 1.5;
+  }
+
+  .project-card-large .project-copy {
+    grid-area: copy;
+    max-width: none;
+    line-height: 1.45;
   }
 
   .project-link {
@@ -1129,6 +1151,14 @@ svg {
     font-size: 15px;
   }
 
+  .project-card-large .project-link {
+    grid-area: link;
+    justify-self: start;
+    width: min(100%, 240px);
+    min-height: 36px;
+    margin-top: 8px;
+  }
+
   .status {
     min-height: 28px;
     padding: 4px 12px;
@@ -1136,7 +1166,10 @@ svg {
   }
 
   .project-card-large .status {
-    margin-top: 8px;
+    grid-area: status;
+    justify-self: end;
+    align-self: start;
+    margin-top: 0;
   }
 
   .project-card-wide {
@@ -1226,7 +1259,7 @@ svg {
     position: relative;
     inset: auto;
     width: 100%;
-    height: 330px;
+    height: 430px;
     margin-top: 18px;
     border: 1px solid rgba(96, 165, 250, 0.32);
     border-radius: 18px;
@@ -1249,6 +1282,10 @@ svg {
     overflow: visible !important;
     clip: auto !important;
     white-space: normal !important;
+  }
+
+  .panel-social .section-title-small::after {
+    display: none;
   }
 
   .social-list {
