@@ -40,15 +40,22 @@ const thoughtSpaceCleanups = new WeakMap();
 const THOUGHT_BOUND_PADDING = 40;
 const THOUGHT_MIN_VISIBLE = 7;
 const THOUGHT_MAX_VISIBLE = 8;
+const THOUGHT_COMPACT_MIN_VISIBLE = 5;
+const THOUGHT_COMPACT_MAX_VISIBLE = 6;
 const THOUGHT_MIN_TOGGLE_DELAY = 4200;
 const THOUGHT_MAX_TOGGLE_DELAY = 6800;
 const THOUGHT_SCALE_MIN = 0.96;
 const THOUGHT_SCALE_MAX = 1.36;
 const THOUGHT_TARGET_SCALE_MIN = 0.98;
 const THOUGHT_TARGET_SCALE_MAX = 1.42;
+const THOUGHT_COMPACT_SCALE_MIN = 0.88;
+const THOUGHT_COMPACT_SCALE_MAX = 1.16;
+const THOUGHT_COMPACT_TARGET_SCALE_MIN = 0.9;
+const THOUGHT_COMPACT_TARGET_SCALE_MAX = 1.22;
 const LIVE_DATA_TIMEOUT = 1400;
 const MAP_DESIGN_WIDTH = 2400;
 const MAP_DESIGN_HEIGHT = 1200;
+const COMPACT_VIEWPORT_WIDTH = 760;
 const MAP_VIEWPORT_MARGIN = 44;
 const MAP_CONTENT_SCALE_MAX = 1.3;
 const MAP_CONTENT_TARGET_SCALE = 1.06;
@@ -136,21 +143,24 @@ function initMapViewportScale() {
   }
 }
 
-export function createThoughtVisibilityRange(count) {
+export function createThoughtVisibilityRange(count, options = {}) {
   const total = Math.max(0, Math.floor(Number(count) || 0));
-  if (total <= THOUGHT_MIN_VISIBLE) {
+  const minTarget = options.compact === true ? THOUGHT_COMPACT_MIN_VISIBLE : THOUGHT_MIN_VISIBLE;
+  const maxTarget = options.compact === true ? THOUGHT_COMPACT_MAX_VISIBLE : THOUGHT_MAX_VISIBLE;
+
+  if (total <= minTarget) {
     return { min: total, max: total };
   }
 
   return {
-    min: Math.min(total, THOUGHT_MIN_VISIBLE),
-    max: Math.min(total, THOUGHT_MAX_VISIBLE),
+    min: Math.min(total, minTarget),
+    max: Math.min(total, maxTarget),
   };
 }
 
-export function createInitialThoughtActiveFlags(count, random = Math.random) {
+export function createInitialThoughtActiveFlags(count, random = Math.random, options = {}) {
   const total = Math.max(0, Math.floor(Number(count) || 0));
-  const range = createThoughtVisibilityRange(total);
+  const range = createThoughtVisibilityRange(total, options);
   const targetCount = randomInteger(random, range.min, range.max);
   const flags = new Array(total).fill(false);
   const indexes = Array.from({ length: total }, (_, index) => index);
@@ -411,10 +421,17 @@ function applyThoughtStyle(item) {
   item.element.style.transform = `rotate(${item.rotation}deg) scale(${item.scale})`;
 }
 
-function resetThoughtMotion(item, random, bounds) {
+function resetThoughtMotion(item, random, bounds, options = {}) {
+  const compact = options.compact === true;
+  const scaleMin = compact ? THOUGHT_COMPACT_SCALE_MIN : THOUGHT_SCALE_MIN;
+  const scaleMax = compact ? THOUGHT_COMPACT_SCALE_MAX : THOUGHT_SCALE_MAX;
+  const targetScaleMin = compact ? THOUGHT_COMPACT_TARGET_SCALE_MIN : THOUGHT_TARGET_SCALE_MIN;
+  const targetScaleMax = compact ? THOUGHT_COMPACT_TARGET_SCALE_MAX : THOUGHT_TARGET_SCALE_MAX;
+  const speedScale = compact ? 0.58 : 1;
+
   measureThoughtItem(item);
-  item.scale = randomBetween(random, THOUGHT_SCALE_MIN, THOUGHT_SCALE_MAX);
-  item.targetScale = randomBetween(random, THOUGHT_TARGET_SCALE_MIN, THOUGHT_TARGET_SCALE_MAX);
+  item.scale = randomBetween(random, scaleMin, scaleMax);
+  item.targetScale = randomBetween(random, targetScaleMin, targetScaleMax);
   item.rotation = randomBetween(random, -7, 7);
   item.rotationSpeed = randomBetween(random, -8, 8);
 
@@ -423,15 +440,15 @@ function resetThoughtMotion(item, random, bounds) {
   const yRange = thoughtAxisRange(bounds.height, size.height);
   item.x = randomBetween(random, xRange.min, xRange.max);
   item.y = randomBetween(random, yRange.min, yRange.max);
-  item.vx = randomBetween(random, 18, 46) * (random() > 0.5 ? 1 : -1);
-  item.vy = randomBetween(random, 12, 38) * (random() > 0.5 ? 1 : -1);
+  item.vx = randomBetween(random, 18, 46) * speedScale * (random() > 0.5 ? 1 : -1);
+  item.vy = randomBetween(random, 12, 38) * speedScale * (random() > 0.5 ? 1 : -1);
 }
 
-function setThoughtActive(item, active, random, bounds, pickThoughtTone) {
+function setThoughtActive(item, active, random, bounds, pickThoughtTone, options = {}) {
   item.active = active;
   if (active) {
     applyThoughtTone(item.element, pickThoughtTone());
-    resetThoughtMotion(item, random, bounds);
+    resetThoughtMotion(item, random, bounds, options);
   }
   applyThoughtStyle(item);
 }
@@ -448,17 +465,17 @@ function prefersReducedMotion() {
   );
 }
 
-function toggleThoughtVisibility(items, random, bounds, minVisible, maxVisible, pickThoughtTone) {
+function toggleThoughtVisibility(items, random, bounds, minVisible, maxVisible, pickThoughtTone, options = {}) {
   const activeItems = items.filter((item) => item.active);
   const inactiveItems = items.filter((item) => !item.active);
 
   if (inactiveItems.length && (activeItems.length < minVisible || (activeItems.length < maxVisible && random() > 0.48))) {
-    setThoughtActive(pickRandomItem(random, inactiveItems), true, random, bounds, pickThoughtTone);
+    setThoughtActive(pickRandomItem(random, inactiveItems), true, random, bounds, pickThoughtTone, options);
     return;
   }
 
   if (activeItems.length > minVisible) {
-    setThoughtActive(pickRandomItem(random, activeItems), false, random, bounds, pickThoughtTone);
+    setThoughtActive(pickRandomItem(random, activeItems), false, random, bounds, pickThoughtTone, options);
   }
 }
 
@@ -478,11 +495,14 @@ export function initThoughtSpace(container) {
   }, 131 + Math.floor(Math.random() * 1000003));
   const random = createSeededRandom(seed);
   const pickThoughtTone = createThoughtTonePicker(random);
-  const motionAllowed = !prefersReducedMotion() && shouldUseThoughtMotion(readCloudRuntimeOptions());
-  const visibilityRange = createThoughtVisibilityRange(elements.length);
+  const runtimeOptions = readCloudRuntimeOptions();
+  const compactMotion = runtimeOptions.width > 0 && runtimeOptions.width <= COMPACT_VIEWPORT_WIDTH;
+  const compactOptions = { compact: compactMotion };
+  const motionAllowed = !prefersReducedMotion() && shouldUseThoughtMotion(runtimeOptions);
+  const visibilityRange = createThoughtVisibilityRange(elements.length, compactOptions);
   const minVisible = visibilityRange.min;
   const maxVisible = visibilityRange.max;
-  const initialActiveFlags = createInitialThoughtActiveFlags(elements.length, random);
+  const initialActiveFlags = createInitialThoughtActiveFlags(elements.length, random, compactOptions);
   let bounds = readThoughtBounds(container);
   let frameId = 0;
   let lastTime = 0;
@@ -505,14 +525,14 @@ export function initThoughtSpace(container) {
   }));
 
   items.forEach((item) => applyThoughtTone(item.element, pickThoughtTone()));
-  items.forEach((item) => resetThoughtMotion(item, random, bounds));
+  items.forEach((item) => resetThoughtMotion(item, random, bounds, compactOptions));
   items.forEach(applyThoughtStyle);
 
   function scheduleVisibilityToggle() {
     if (!motionAllowed || items.length < 2) return;
     visibilityTimer = window.setTimeout(() => {
       bounds = readThoughtBounds(container);
-      toggleThoughtVisibility(items, random, bounds, minVisible, maxVisible, pickThoughtTone);
+      toggleThoughtVisibility(items, random, bounds, minVisible, maxVisible, pickThoughtTone, compactOptions);
       scheduleVisibilityToggle();
     }, randomBetween(random, THOUGHT_MIN_TOGGLE_DELAY, THOUGHT_MAX_TOGGLE_DELAY));
   }
@@ -527,7 +547,11 @@ export function initThoughtSpace(container) {
         if (!item.active) return;
 
         if (time >= item.nextScaleAt) {
-          item.targetScale = randomBetween(random, THOUGHT_TARGET_SCALE_MIN, THOUGHT_TARGET_SCALE_MAX);
+          item.targetScale = randomBetween(
+            random,
+            compactMotion ? THOUGHT_COMPACT_TARGET_SCALE_MIN : THOUGHT_TARGET_SCALE_MIN,
+            compactMotion ? THOUGHT_COMPACT_TARGET_SCALE_MAX : THOUGHT_TARGET_SCALE_MAX,
+          );
           item.nextScaleAt = time + randomBetween(random, 2600, 6200);
         }
         item.scale += (item.targetScale - item.scale) * Math.min(1, dt * 1.2);
@@ -733,11 +757,9 @@ export function shouldUseCanvasClouds(options = {}) {
 }
 
 export function shouldUseThoughtMotion(options = {}) {
-  const width = Math.max(0, Number(options.width || 0));
   const memory = options.deviceMemory == null ? null : Number(options.deviceMemory);
 
   if (options.saveData === true) return false;
-  if (width && width <= 760) return false;
   if (memory && memory < 4) return false;
 
   return true;

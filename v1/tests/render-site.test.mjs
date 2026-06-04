@@ -150,6 +150,7 @@ test("thought colors are automatically balanced instead of following stored tone
 
 test("thought space starts with a lively floating visible set", () => {
   const elevenRange = createThoughtVisibilityRange(11);
+  const compactElevenRange = createThoughtVisibilityRange(11, { compact: true });
   const eightRange = createThoughtVisibilityRange(8);
   const sixRange = createThoughtVisibilityRange(6);
   const fourRange = createThoughtVisibilityRange(4);
@@ -157,6 +158,7 @@ test("thought space starts with a lively floating visible set", () => {
   const initialVisibleCount = initialFlags.filter(Boolean).length;
 
   assert.deepEqual(elevenRange, { min: 7, max: 8 });
+  assert.deepEqual(compactElevenRange, { min: 5, max: 6 });
   assert.deepEqual(eightRange, { min: 7, max: 8 });
   assert.deepEqual(sixRange, { min: 6, max: 6 });
   assert.deepEqual(fourRange, { min: 4, max: 4 });
@@ -174,9 +176,9 @@ test("cloud canvas stays off on mobile-sized or constrained devices", () => {
   assert.equal(shouldUseCanvasClouds({ width: 1366, deviceMemory: 8, saveData: true }), false);
 });
 
-test("thought physics stays off on mobile-sized or constrained devices", () => {
+test("thought physics allows lightweight mobile motion but stays off on constrained devices", () => {
   assert.equal(shouldUseThoughtMotion({ width: 1366, deviceMemory: 8, saveData: false }), true);
-  assert.equal(shouldUseThoughtMotion({ width: 560, deviceMemory: 8, saveData: false }), false);
+  assert.equal(shouldUseThoughtMotion({ width: 560, deviceMemory: 8, saveData: false }), true);
   assert.equal(shouldUseThoughtMotion({ width: 1366, deviceMemory: 2, saveData: false }), false);
   assert.equal(shouldUseThoughtMotion({ width: 1366, deviceMemory: 8, saveData: true }), false);
 });
@@ -252,8 +254,14 @@ test("thought bubbles use a larger random scale range after the wider bounds", a
   assert.match(script, /const THOUGHT_SCALE_MAX = 1\.36/);
   assert.match(script, /const THOUGHT_TARGET_SCALE_MIN = 0\.98/);
   assert.match(script, /const THOUGHT_TARGET_SCALE_MAX = 1\.42/);
-  assert.match(script, /randomBetween\(random,\s*THOUGHT_SCALE_MIN,\s*THOUGHT_SCALE_MAX\)/);
-  assert.match(script, /randomBetween\(random,\s*THOUGHT_TARGET_SCALE_MIN,\s*THOUGHT_TARGET_SCALE_MAX\)/);
+  assert.match(script, /const THOUGHT_COMPACT_SCALE_MIN = 0\.88/);
+  assert.match(script, /const THOUGHT_COMPACT_SCALE_MAX = 1\.16/);
+  assert.match(script, /const THOUGHT_COMPACT_TARGET_SCALE_MIN = 0\.9/);
+  assert.match(script, /const THOUGHT_COMPACT_TARGET_SCALE_MAX = 1\.22/);
+  assert.match(script, /const scaleMin = compact \? THOUGHT_COMPACT_SCALE_MIN : THOUGHT_SCALE_MIN/);
+  assert.match(script, /const targetScaleMin = compact \? THOUGHT_COMPACT_TARGET_SCALE_MIN : THOUGHT_TARGET_SCALE_MIN/);
+  assert.match(script, /randomBetween\(random,\s*scaleMin,\s*scaleMax\)/);
+  assert.match(script, /randomBetween\(random,\s*targetScaleMin,\s*targetScaleMax\)/);
   assert.doesNotMatch(script, /randomBetween\(random,\s*0\.84,\s*1\.2[24]\)/);
 });
 
@@ -440,6 +448,27 @@ test("homepage uses a fixed 2:1 design canvas inside a scaled viewport shell", a
   assert.match(styles, /\.load-progress\s*{[^}]*position:\s*fixed/s);
   assert.match(styles, /\.load-progress\s*{[^}]*contain:\s*layout paint style/s);
   assert.match(styles, /\.load-progress\s*{[^}]*height:\s*2px/s);
+});
+
+test("mobile homepage switches to a vertical V1.5 layout without changing the desktop canvas block", async () => {
+  const rootHtml = await readFile("index.html", "utf8");
+  const v1Html = await readFile("v1/index.html", "utf8");
+  const styles = await readFile("v1/styles.css", "utf8");
+
+  assert.match(rootHtml, /v=1\.5-mobile-layout/);
+  assert.match(v1Html, /v=1\.5-mobile-layout/);
+  assert.match(styles, /@media \(max-width:\s*760px\)\s*{/);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body\s*{[\s\S]*overflow-y:\s*auto/s);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.page\s*{[\s\S]*height:\s*auto/s);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.map-frame\s*{[\s\S]*grid-template-columns:\s*1fr/s);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.map-frame\s*{[\s\S]*transform:\s*none/s);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.panel-projects\s*{[\s\S]*order:\s*1/s);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.panel-todos\s*{[\s\S]*order:\s*2/s);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.panel-thoughts\s*{[\s\S]*order:\s*3/s);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.panel-social\s*{[\s\S]*order:\s*4/s);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.projects-grid\s*{[\s\S]*grid-template-columns:\s*1fr/s);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.thought-space\s*{[\s\S]*position:\s*relative/s);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.thought-space\s*{[\s\S]*height:\s*330px/s);
 });
 
 test("map viewport scaling preserves the fixed design ratio", () => {

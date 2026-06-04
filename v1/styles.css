@@ -931,6 +931,347 @@ svg {
   background: linear-gradient(145deg, #ffffff, #f8fafc);
 }
 
+@media (max-width: 760px) {
+  html,
+  body {
+    min-height: 100%;
+  }
+
+  body {
+    overflow-x: hidden;
+    overflow-y: auto;
+    background:
+      radial-gradient(circle at 86% 4%, rgba(37, 99, 235, 0.2), transparent 32%),
+      linear-gradient(180deg, #268fd6 0%, #69bce9 28%, #b8ddf5 62%, #68b8e4 100%);
+  }
+
+  body::before {
+    inset: -18vh -120vw;
+    background-size: 2100px 620px;
+    background-position: -360px 20%;
+    opacity: 0.72;
+  }
+
+  .page {
+    width: 100%;
+    height: auto;
+    min-height: 100svh;
+    display: block;
+    overflow: visible;
+    padding: 18px 14px 34px;
+  }
+
+  .map-viewport {
+    width: min(100%, 430px);
+    height: auto;
+    margin: 0 auto;
+    overflow: visible;
+  }
+
+  .map-frame {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    width: 100%;
+    height: auto;
+    aspect-ratio: auto;
+    overflow: visible;
+    border-width: 1.5px;
+    border-radius: 20px;
+    background: rgba(244, 250, 255, 0.22);
+    box-shadow:
+      0 18px 48px rgba(37, 99, 235, 0.13),
+      inset 0 1px 0 rgba(255, 255, 255, 0.78);
+    transform: none;
+    transform-origin: center;
+  }
+
+  .map-frame::before {
+    opacity: 0.2;
+    background-size: 22px 22px;
+    mask-image: linear-gradient(180deg, #000 0, #000 88%, transparent 100%);
+  }
+
+  .panel {
+    min-height: auto;
+    padding: 24px 18px;
+  }
+
+  .panel-projects {
+    order: 1;
+    padding: 24px 18px 22px;
+  }
+
+  .panel-todos {
+    order: 2;
+    display: block;
+    overflow: visible;
+    padding: 24px 18px;
+  }
+
+  .panel-thoughts {
+    order: 3;
+    overflow: visible;
+    padding: 24px 18px 20px;
+  }
+
+  .panel-social {
+    order: 4;
+    padding: 22px 18px 24px;
+  }
+
+  .panel-todos,
+  .panel-social {
+    border-left: 0;
+  }
+
+  .panel-todos,
+  .panel-thoughts,
+  .panel-social {
+    border-top: 1.5px solid rgba(37, 99, 235, 0.62);
+  }
+
+  .section-title {
+    gap: 10px;
+    font-size: 28px;
+  }
+
+  .section-title::after {
+    left: 38px;
+    bottom: -10px;
+    width: 30px;
+    height: 2px;
+  }
+
+  .section-title-small {
+    gap: 9px;
+    font-size: 22px;
+  }
+
+  .section-title-small::after {
+    left: 33px;
+    bottom: -9px;
+    width: 28px;
+  }
+
+  .title-icon {
+    width: 30px;
+  }
+
+  .section-title-small .title-icon {
+    width: 26px;
+  }
+
+  .projects-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    gap: 14px;
+    height: auto;
+    margin-top: 30px;
+  }
+
+  .project-card {
+    border-radius: 18px;
+  }
+
+  .project-card-large {
+    grid-row: auto;
+    width: 100%;
+    min-height: 232px;
+    gap: 10px;
+    padding: 24px 18px 22px;
+  }
+
+  .project-card-large .project-name,
+  .project-card-large .project-copy,
+  .project-card-large .project-link,
+  .project-card-large .status,
+  .project-card-large .project-illustration {
+    transform: none;
+  }
+
+  .card-index {
+    top: 12px;
+    left: 12px;
+    min-width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    font-size: 12px;
+  }
+
+  .project-illustration {
+    width: 82px;
+    margin-bottom: 4px;
+    border-radius: 20px;
+  }
+
+  .project-name {
+    font-size: 24px;
+  }
+
+  .project-card-large .project-name {
+    margin-top: 0;
+    margin-bottom: 2px;
+  }
+
+  .project-copy,
+  .project-card-large .project-copy {
+    max-width: 21em;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .project-link {
+    width: min(72%, 220px);
+    min-height: 38px;
+    margin-top: 6px;
+    padding: 0 12px;
+    font-size: 15px;
+  }
+
+  .status {
+    min-height: 28px;
+    padding: 4px 12px;
+    font-size: 12px;
+  }
+
+  .project-card-large .status {
+    margin-top: 8px;
+  }
+
+  .project-card-wide {
+    grid-template-columns: 52px minmax(0, 1fr) 30px;
+    width: 100%;
+    height: auto;
+    min-height: 104px;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .wide-icon {
+    width: 52px;
+    border-radius: 15px;
+  }
+
+  .wide-content {
+    gap: 5px;
+  }
+
+  .project-card-wide .project-name {
+    font-size: 17px;
+  }
+
+  .project-card-wide .project-copy {
+    font-size: 13px;
+    line-height: 1.42;
+  }
+
+  .round-arrow {
+    width: 30px;
+    height: 30px;
+    font-size: 24px;
+  }
+
+  .panel-todos .todo-list {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .todo-list {
+    gap: 10px;
+    margin-top: 28px;
+  }
+
+  .todo-row {
+    grid-template-columns: 12px minmax(0, 1fr);
+    gap: 10px;
+    min-height: 54px;
+    padding: 12px 14px;
+    border-radius: 14px;
+  }
+
+  .todo-dot {
+    width: 12px;
+    height: 12px;
+  }
+
+  .todo-text {
+    font-size: 15px;
+  }
+
+  .todo-track {
+    height: 4px;
+  }
+
+  .panel-thoughts .section-title-small {
+    transform: none;
+  }
+
+  .site-signature {
+    position: static;
+    gap: 6px;
+    margin: 24px 0 0;
+  }
+
+  .site-signature span {
+    font-size: 26px;
+  }
+
+  .site-signature small {
+    font-size: 13px;
+  }
+
+  .thought-space {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: 330px;
+    margin-top: 18px;
+    border: 1px solid rgba(96, 165, 250, 0.32);
+    border-radius: 18px;
+    background: rgba(239, 248, 255, 0.22);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  .thought-pill {
+    min-height: 32px;
+    padding: 0 16px;
+    font-size: 14px;
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.1);
+  }
+
+  .panel-social .visually-hidden {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    clip: auto !important;
+    white-space: normal !important;
+  }
+
+  .social-list {
+    gap: 10px;
+    margin-top: 28px;
+    padding-right: 0;
+  }
+
+  .social-list a {
+    grid-template-columns: 12px minmax(0, 1fr) auto;
+    gap: 10px;
+    min-height: 50px;
+    padding: 0 14px;
+    border-radius: 15px;
+    font-size: 15px;
+  }
+
+  .social-mark {
+    width: 12px;
+    height: 12px;
+  }
+}
+
 @keyframes cloud-image-drift-left {
   0% {
     background-position: -520px 50%;
