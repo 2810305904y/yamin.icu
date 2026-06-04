@@ -40,8 +40,8 @@ const thoughtSpaceCleanups = new WeakMap();
 const THOUGHT_BOUND_PADDING = 40;
 const THOUGHT_MIN_VISIBLE = 7;
 const THOUGHT_MAX_VISIBLE = 8;
-const THOUGHT_COMPACT_MIN_VISIBLE = 5;
-const THOUGHT_COMPACT_MAX_VISIBLE = 6;
+const THOUGHT_COMPACT_MIN_VISIBLE = 4;
+const THOUGHT_COMPACT_MAX_VISIBLE = 5;
 const THOUGHT_MIN_TOGGLE_DELAY = 4200;
 const THOUGHT_MAX_TOGGLE_DELAY = 6800;
 const THOUGHT_SCALE_MIN = 0.96;
@@ -427,7 +427,7 @@ function resetThoughtMotion(item, random, bounds, options = {}) {
   const scaleMax = compact ? THOUGHT_COMPACT_SCALE_MAX : THOUGHT_SCALE_MAX;
   const targetScaleMin = compact ? THOUGHT_COMPACT_TARGET_SCALE_MIN : THOUGHT_TARGET_SCALE_MIN;
   const targetScaleMax = compact ? THOUGHT_COMPACT_TARGET_SCALE_MAX : THOUGHT_TARGET_SCALE_MAX;
-  const speedScale = compact ? 0.58 : 1;
+  const speedScale = compact ? 0.36 : 1;
 
   measureThoughtItem(item);
   item.scale = randomBetween(random, scaleMin, scaleMax);

@@ -158,7 +158,7 @@ test("thought space starts with a lively floating visible set", () => {
   const initialVisibleCount = initialFlags.filter(Boolean).length;
 
   assert.deepEqual(elevenRange, { min: 7, max: 8 });
-  assert.deepEqual(compactElevenRange, { min: 5, max: 6 });
+  assert.deepEqual(compactElevenRange, { min: 4, max: 5 });
   assert.deepEqual(eightRange, { min: 7, max: 8 });
   assert.deepEqual(sixRange, { min: 6, max: 6 });
   assert.deepEqual(fourRange, { min: 4, max: 4 });
@@ -450,15 +450,18 @@ test("homepage uses a fixed 2:1 design canvas inside a scaled viewport shell", a
   assert.match(styles, /\.load-progress\s*{[^}]*height:\s*2px/s);
 });
 
-test("mobile homepage switches to a vertical V1.5 layout without changing the desktop canvas block", async () => {
+test("mobile homepage switches to a vertical V1.5.1 layout without changing the desktop canvas block", async () => {
   const rootHtml = await readFile("index.html", "utf8");
   const v1Html = await readFile("v1/index.html", "utf8");
   const styles = await readFile("v1/styles.css", "utf8");
 
-  assert.match(rootHtml, /v=1\.5-mobile-layout/);
-  assert.match(v1Html, /v=1\.5-mobile-layout/);
+  assert.match(rootHtml, /v=1\.5\.1-mobile-performance/);
+  assert.match(v1Html, /v=1\.5\.1-mobile-performance/);
   assert.match(styles, /@media \(max-width:\s*760px\)\s*{/);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body\s*{[\s\S]*overflow-y:\s*auto/s);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body::before\s*{[\s\S]*background-image:\s*none/s);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body::before\s*{[\s\S]*animation:\s*none/s);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body::before\s*{[\s\S]*opacity:\s*0/s);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.page\s*{[\s\S]*height:\s*auto/s);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.map-frame\s*{[\s\S]*grid-template-columns:\s*1fr/s);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.map-frame\s*{[\s\S]*transform:\s*none/s);
@@ -467,8 +470,17 @@ test("mobile homepage switches to a vertical V1.5 layout without changing the de
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.panel-thoughts\s*{[\s\S]*order:\s*3/s);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.panel-social\s*{[\s\S]*order:\s*4/s);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.projects-grid\s*{[\s\S]*grid-template-columns:\s*1fr/s);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.project-illustration\s*{[\s\S]*width:\s*64px/s);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.thought-space\s*{[\s\S]*position:\s*relative/s);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.thought-space\s*{[\s\S]*height:\s*330px/s);
+});
+
+test("mobile thought motion is tuned down for constrained phone performance", async () => {
+  const script = await readFile("v1/scripts/render-site.mjs", "utf8");
+
+  assert.match(script, /const THOUGHT_COMPACT_MIN_VISIBLE = 4/);
+  assert.match(script, /const THOUGHT_COMPACT_MAX_VISIBLE = 5/);
+  assert.match(script, /const speedScale = compact \? 0\.36 : 1/);
 });
 
 test("map viewport scaling preserves the fixed design ratio", () => {

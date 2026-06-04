@@ -947,9 +947,9 @@ svg {
 
   body::before {
     inset: -18vh -120vw;
-    background-size: 2100px 620px;
-    background-position: -360px 20%;
-    opacity: 0.72;
+    background-image: none;
+    animation: none;
+    opacity: 0;
   }
 
   .page {
@@ -1100,9 +1100,9 @@ svg {
   }
 
   .project-illustration {
-    width: 82px;
+    width: 64px;
     margin-bottom: 4px;
-    border-radius: 20px;
+    border-radius: 16px;
   }
 
   .project-name {
