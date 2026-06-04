@@ -1285,9 +1285,11 @@ svg {
   .thought-space {
     position: relative;
     inset: auto;
-    width: 100%;
+    width: calc(100% + 24px);
     height: 520px;
     margin-top: 18px;
+    margin-right: -12px;
+    margin-left: -12px;
     border: 1px solid rgba(96, 165, 250, 0.32);
     border-radius: 18px;
     background: rgba(239, 248, 255, 0.22);
@@ -1302,7 +1304,7 @@ svg {
   }
 
   .thought-space .thought-pill {
-    max-width: calc(100% - 112px);
+    max-width: min(70vw, calc(100% - 48px));
     overflow: hidden;
     text-overflow: ellipsis;
   }

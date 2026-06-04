@@ -38,7 +38,7 @@ const iconMap = {
 
 const thoughtSpaceCleanups = new WeakMap();
 const THOUGHT_BOUND_PADDING = 40;
-const THOUGHT_COMPACT_BOUND_PADDING = 56;
+const THOUGHT_COMPACT_BOUND_PADDING = 24;
 const THOUGHT_MIN_VISIBLE = 7;
 const THOUGHT_MAX_VISIBLE = 8;
 const THOUGHT_COMPACT_MIN_VISIBLE = 7;

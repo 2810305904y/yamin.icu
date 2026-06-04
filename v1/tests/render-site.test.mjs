@@ -252,14 +252,17 @@ test("thought bounds use the unscaled layout box inside the scaled map", async (
   });
 });
 
-test("compact thought bounds keep long labels inside symmetric edge padding", async () => {
+test("compact thought bounds provide wider horizontal travel on mobile", async () => {
   const script = await readFile("v1/scripts/render-site.mjs", "utf8");
   const styles = await readFile("v1/styles.css", "utf8");
 
-  assert.match(script, /const THOUGHT_COMPACT_BOUND_PADDING = 56/);
+  assert.match(script, /const THOUGHT_COMPACT_BOUND_PADDING = 24/);
   assert.match(script, /readThoughtBounds\(container,\s*\{ compact:\s*compactMotion \}\)/);
   assert.match(script, /padding:\s*options\.compact === true \? THOUGHT_COMPACT_BOUND_PADDING : THOUGHT_BOUND_PADDING/);
-  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.thought-space \.thought-pill\s*{[\s\S]*max-width:\s*calc\(100% - 112px\)/s);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.thought-space\s*{[\s\S]*width:\s*calc\(100% \+ 24px\)/s);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.thought-space\s*{[\s\S]*margin-left:\s*-12px/s);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.thought-space\s*{[\s\S]*margin-right:\s*-12px/s);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.thought-space \.thought-pill\s*{[\s\S]*max-width:\s*min\(70vw,\s*calc\(100% - 48px\)\)/s);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*\.thought-space \.thought-pill\s*{[\s\S]*text-overflow:\s*ellipsis/s);
 
   const match = script.match(/function thoughtAxisRange\(axisSize, itemSize, padding = THOUGHT_BOUND_PADDING\) \{([\s\S]*?)\n\}/);
@@ -270,9 +273,13 @@ test("compact thought bounds keep long labels inside symmetric edge padding", as
     `return function thoughtAxisRange(axisSize, itemSize, padding = THOUGHT_BOUND_PADDING) {${match[1]}\n};`,
   )(40);
 
-  assert.deepEqual(thoughtAxisRange(430, 120, 56), {
-    min: 56,
-    max: 254,
+  assert.deepEqual(thoughtAxisRange(430, 120, 24), {
+    min: 24,
+    max: 286,
+  });
+  assert.deepEqual(thoughtAxisRange(430, 280, 24), {
+    min: 24,
+    max: 126,
   });
 });
 
@@ -495,13 +502,13 @@ test("homepage uses a fixed 2:1 design canvas inside a scaled viewport shell", a
   assert.match(styles, /\.load-progress\s*{[^}]*height:\s*2px/s);
 });
 
-test("mobile homepage switches to a vertical V1.5.5 layout without changing the desktop canvas block", async () => {
+test("mobile homepage switches to a vertical V1.5.6 layout without changing the desktop canvas block", async () => {
   const rootHtml = await readFile("index.html", "utf8");
   const v1Html = await readFile("v1/index.html", "utf8");
   const styles = await readFile("v1/styles.css", "utf8");
 
-  assert.match(rootHtml, /v=1\.5\.5-mobile-polish/);
-  assert.match(v1Html, /v=1\.5\.5-mobile-polish/);
+  assert.match(rootHtml, /v=1\.5\.6-mobile-thought-travel/);
+  assert.match(v1Html, /v=1\.5\.6-mobile-thought-travel/);
   assert.match(styles, /@media \(max-width:\s*760px\)\s*{/);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body\s*{[\s\S]*overflow-y:\s*auto/s);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body::before\s*{[\s\S]*background-image:\s*none/s);
