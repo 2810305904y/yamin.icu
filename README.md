@@ -24,6 +24,31 @@ https://鸦珉.icu/
 xn--idyr71g.icu
 ```
 
+测试服 Vercel 地址：
+
+```txt
+https://yamin-icu-test.vercel.app/
+```
+
+测试服目标域名：
+
+```txt
+https://test.鸦珉.icu/
+```
+
+测试服后台配置时使用：
+
+```txt
+test.xn--idyr71g.icu
+```
+
+测试服当前状态：
+
+- Vercel 测试项目：`yamin-icu-test`。
+- 测试项目已部署当前 `V1.5.6` 页面。
+- `test.xn--idyr71g.icu` 已绑定到 Vercel 测试项目。
+- 域名 DNS 后台还需要新增记录：`A test.xn--idyr71g.icu 76.76.21.21`。
+
 ## 本地查看
 
 ```txt
