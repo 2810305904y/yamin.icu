@@ -157,6 +157,49 @@ test("site data API creates Supabase backups around online writes", async () => 
   assert.equal(backupBodies[1].thought_count, nextData.thoughts.length);
 });
 
+test("site data API disables online writes on test service hosts", async () => {
+  const calls = [];
+  const nextData = {
+    ...siteData,
+    identity: {
+      ...siteData.identity,
+      subtitle: "测试服不应保存到主站",
+    },
+  };
+
+  const response = await handleSiteDataRequest({
+    method: "PUT",
+    headers: {
+      Authorization: "Bearer secret",
+      Host: "test.xn--idyr71g.icu",
+    },
+    body: JSON.stringify({
+      data: nextData,
+      expectedRevision: createSiteDataRevision(siteData),
+    }),
+    env: {
+      VERCEL: "1",
+      SITE_ADMIN_TOKEN: "secret",
+      SUPABASE_URL: "https://example.supabase.co",
+      SUPABASE_SERVICE_ROLE_KEY: "service-key",
+      SITE_DATA_ID: "homepage-v1",
+    },
+    fallbackData: siteData,
+    fetchFn: async (url, options) => {
+      calls.push({ url, options });
+      return {
+        ok: true,
+        json: async () => [{ data: siteData }],
+      };
+    },
+  });
+  const body = JSON.parse(response.body);
+
+  assert.equal(response.status, 403);
+  assert.match(body.error, /测试服已禁用线上保存/);
+  assert.equal(calls.length, 0);
+});
+
 test("site data API rejects online writes from a stale editing revision", async () => {
   const calls = [];
   const nextData = {

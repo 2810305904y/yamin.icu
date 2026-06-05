@@ -11,6 +11,17 @@ const STORAGE_KEY = "yamin.siteDataDraft.v1";
 const LEGACY_ADMIN_TOKEN_KEY = "yamin.adminToken.v1";
 const ADMIN_LOAD_TIMEOUT = 30000;
 
+function isTestServiceHost(hostname) {
+  const host = String(hostname || "").toLowerCase();
+  return (
+    host === "test.xn--idyr71g.icu" ||
+    host === "yamin-icu-test.vercel.app" ||
+    (host.startsWith("yamin-icu-test-") && host.endsWith(".vercel.app"))
+  );
+}
+
+const TEST_SERVICE_SAVE_DISABLED = isTestServiceHost(window.location.hostname);
+
 const sectionMeta = {
   projects: { label: "项目卡片", itemName: "项目" },
   todos: { label: "待办横条", itemName: "待办" },
@@ -81,6 +92,14 @@ function loadDraft() {
 function saveDraft() {
   persistDraft();
   setStatus("草稿已保存在当前浏览器。");
+}
+
+function applyOnlineSaveState() {
+  const saveOnlineButton = document.querySelector('[data-action="save-online"]');
+  if (!saveOnlineButton || !TEST_SERVICE_SAVE_DISABLED) return;
+
+  saveOnlineButton.disabled = true;
+  saveOnlineButton.title = "测试服已禁用线上保存。";
 }
 
 function clearLegacyAdminToken() {
@@ -370,6 +389,7 @@ function render() {
   renderTabs();
   renderEditor();
   renderPreview();
+  applyOnlineSaveState();
 }
 
 function escapeText(value) {
@@ -461,6 +481,12 @@ async function putOnline() {
 }
 
 async function saveOnline() {
+  if (TEST_SERVICE_SAVE_DISABLED) {
+    persistDraft();
+    setStatus("测试服已禁用线上保存。当前内容已保留为浏览器草稿，不会写入主站或数据库。");
+    return;
+  }
+
   if (loadedContentSource === "static") {
     setStatus("没有保存：后台没有读到线上数据库，只读到了静态旧数据。请刷新后再保存。");
     return;

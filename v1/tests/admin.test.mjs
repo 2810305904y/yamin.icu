@@ -46,6 +46,17 @@ test("admin editor supports local draft and data export workflow", async () => {
   assert.match(html, /清除此设备授权/);
 });
 
+test("admin editor disables online save on test service hosts", async () => {
+  const script = await readFile("admin/admin.mjs", "utf8");
+
+  assert.match(script, /function isTestServiceHost/);
+  assert.match(script, /TEST_SERVICE_SAVE_DISABLED/);
+  assert.match(script, /yamin-icu-test\.vercel\.app/);
+  assert.match(script, /test\.xn--idyr71g\.icu/);
+  assert.match(script, /saveOnlineButton\.disabled\s*=\s*true/);
+  assert.match(script, /测试服已禁用线上保存/);
+});
+
 test("admin editor keeps saves tied to the loaded online revision", async () => {
   const script = await readFile("admin/admin.mjs", "utf8");
   const html = await readFile("admin/index.html", "utf8");
@@ -110,7 +121,7 @@ test("admin shell sits above the shared cloud background", async () => {
   assert.match(styles, /\.admin-shell\s*{[^}]*background:\s*rgba\(255, 255, 255, 0\.94\)/s);
   assert.match(styles, /\.editor-panel,[\s\S]*?\.preview-panel\s*{[^}]*background:\s*rgba\(255, 255, 255, 0\.93\)/s);
   assert.match(html, /\/admin\/styles\.css\?v=1\.4\.4-admin-revision/);
-  assert.match(html, /\/admin\/admin\.mjs\?v=1\.4\.4-admin-revision/);
+  assert.match(html, /\/admin\/admin\.mjs\?v=1\.5\.7-test-save-lock/);
 });
 
 test("homepage cloud layer sits below the translucent map frame", async () => {
@@ -177,14 +188,14 @@ test("version naming uses the new three-part small release format", async () => 
   const namingRules = await readFile("项目进度/2026-06-01_版本命名规则.md", "utf8");
 
   assert.match(readme, /当前阶段：V1\.5/);
-  assert.match(readme, /当前小版本：V1\.5\.6/);
+  assert.match(readme, /当前小版本：V1\.5\.7/);
   assert.match(readme, /当前主页视觉基准（V1\.4 桌面 \/ V1\.5 手机）/);
   assert.match(readme, /2400 x 1200/);
   assert.match(readme, /site_page_backups/);
   assert.match(readme, /CRON_SECRET/);
   assert.match(readme, /admin_sessions/);
   assert.match(readme, /HttpOnly cookie/);
-  assert.match(adminHtml, /<p class="admin-kicker">V1\.5\.6<\/p>/);
+  assert.match(adminHtml, /<p class="admin-kicker">V1\.5\.7<\/p>/);
   assert.match(namingRules, /当前阶段记为 `V1\.4`/);
   assert.match(namingRules, /V1\.4\.0\s*->\s*V1\.4 阶段的视觉定稿起点/);
   assert.match(namingRules, /V1\.4\.1\s*->\s*后台保存保护与数据备份补丁/);

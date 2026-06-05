@@ -50,6 +50,38 @@ function authHeaders(auth = {}) {
   return auth.setCookie ? { "Set-Cookie": Array.isArray(auth.setCookie) ? auth.setCookie : [auth.setCookie] } : {};
 }
 
+function getHeaderValue(headers = {}, name) {
+  if (typeof headers.get === "function") return headers.get(name);
+
+  const normalizedName = String(name).toLowerCase();
+  const match = Object.entries(headers).find(([key]) => String(key).toLowerCase() === normalizedName);
+  return match ? match[1] : "";
+}
+
+function normalizeHost(value) {
+  return String(value || "")
+    .split(",")[0]
+    .trim()
+    .replace(/:\d+$/, "")
+    .toLowerCase();
+}
+
+function isTestServiceHost(hostname) {
+  const host = normalizeHost(hostname);
+  return (
+    host === "test.xn--idyr71g.icu" ||
+    host === "yamin-icu-test.vercel.app" ||
+    (host.startsWith("yamin-icu-test-") && host.endsWith(".vercel.app"))
+  );
+}
+
+function isOnlineSaveDisabled({ headers = {}, env = {} }) {
+  if (String(env.SITE_DISABLE_ONLINE_SAVE || "") === "1") return true;
+  const forwardedHost = getHeaderValue(headers, "x-forwarded-host");
+  const host = forwardedHost || getHeaderValue(headers, "host");
+  return isTestServiceHost(host);
+}
+
 function hasSupabaseConfig(env = {}) {
   return Boolean(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY);
 }
@@ -270,6 +302,10 @@ export async function handleSiteDataRequest({
   }
 
   if (method === "PUT") {
+    if (isOnlineSaveDisabled({ headers, env })) {
+      return jsonResponse(403, { error: "测试服已禁用线上保存，不会写入主站或数据库。" });
+    }
+
     const auth = await authorizeAdminRequest({ headers, env, fetchFn });
     if (!auth.ok) {
       return jsonResponse(401, { error: "需要后台保存口令。" }, authHeaders(auth));
@@ -338,6 +374,10 @@ export async function handleSiteDataBackupRequest({
   const auth = await authorizeCronOrAdminRequest({ headers, env, fetchFn });
   if (!auth.ok) {
     return jsonResponse(401, { error: "需要后台备份口令。" }, authHeaders(auth));
+  }
+
+  if (isOnlineSaveDisabled({ headers, env })) {
+    return jsonResponse(403, { error: "测试服已禁用线上备份，不会写入主站或数据库。" }, authHeaders(auth));
   }
 
   if (!hasSupabaseConfig(env)) {
