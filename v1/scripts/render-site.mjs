@@ -53,7 +53,8 @@ const THOUGHT_COMPACT_SCALE_MIN = 0.88;
 const THOUGHT_COMPACT_SCALE_MAX = 1.16;
 const THOUGHT_COMPACT_TARGET_SCALE_MIN = 0.9;
 const THOUGHT_COMPACT_TARGET_SCALE_MAX = 1.22;
-const LIVE_DATA_TIMEOUT = 1400;
+const LIVE_DATA_TIMEOUT = 4000;
+const LIVE_DATA_FALLBACK_MESSAGE = "数据没有读取成功，请刷新重试。";
 const MAP_DESIGN_WIDTH = 2400;
 const MAP_DESIGN_HEIGHT = 1200;
 const COMPACT_VIEWPORT_WIDTH = 760;
@@ -634,6 +635,21 @@ function setPageLoadState(state) {
   }
 }
 
+function setLiveDataMessage(message = "") {
+  if (typeof document === "undefined") return;
+
+  const messageElement = document.querySelector("[data-load-message]");
+  if (!messageElement) return;
+
+  if (message) {
+    messageElement.textContent = message;
+    messageElement.hidden = false;
+    return;
+  }
+
+  messageElement.hidden = true;
+}
+
 function requestIdleWork(callback, delay = 420) {
   if (typeof window === "undefined") {
     callback();
@@ -733,7 +749,10 @@ export async function loadLiveSiteData(fetchFn = fetch, options = {}) {
 export async function mountLiveSite() {
   mountSite(siteData, { initializeThoughts: false });
   setPageLoadState("content");
-  mountSite(await loadLiveSiteData(fetch, { timeoutMs: 1400 }), { initializeThoughts: false });
+  const payload = await loadLiveSitePayload(fetch, { timeoutMs: LIVE_DATA_TIMEOUT });
+  const shouldWarn = payload && (payload.source === "static" || payload.apiError || payload.databaseError);
+  setLiveDataMessage(shouldWarn ? LIVE_DATA_FALLBACK_MESSAGE : "");
+  mountSite(payload && payload.data ? payload.data : siteData, { initializeThoughts: false });
   setPageLoadState("complete");
   scheduleHomepageAnimations();
 }

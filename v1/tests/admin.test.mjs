@@ -170,14 +170,14 @@ test("project cards keep a slightly slimmer desktop footprint", async () => {
   assert.doesNotMatch(siteStyles, /\.projects-grid\s*{[^}]*justify-self:\s*start/s);
   assert.doesNotMatch(siteStyles, /grid-template-columns:\s*minmax\(180px,\s*0\.86fr\)\s*minmax\(180px,\s*0\.86fr\)\s*minmax\(280px,\s*1\.2fr\)/);
   assert.doesNotMatch(siteStyles, /grid-template-columns:\s*minmax\(210px,\s*1fr\)\s*minmax\(210px,\s*1fr\)\s*minmax\(280px,\s*1\.28fr\)/);
-  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.5\.6-mobile-thought-travel/);
-  assert.match(rootHtml, /\/v1\/scripts\/render-site\.mjs\?v=1\.5\.6-mobile-thought-travel/);
+  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.5\.8-live-data-status/);
+  assert.match(rootHtml, /\/v1\/scripts\/render-site\.mjs\?v=1\.5\.8-live-data-status/);
   assert.match(rootHtml, /<span id="todos-title">施工中<\/span>/);
   assert.match(rootHtml, /<span id="thoughts-title">怪念头<\/span>/);
   assert.match(rootHtml, /<script nomodule>/);
   assert.match(rootHtml, /window\.location\.replace\("\/v1\/"\)/);
-  assert.match(v1Html, /\.\/styles\.css\?v=1\.5\.6-mobile-thought-travel/);
-  assert.match(v1Html, /\.\/scripts\/render-site\.mjs\?v=1\.5\.6-mobile-thought-travel/);
+  assert.match(v1Html, /\.\/styles\.css\?v=1\.5\.8-live-data-status/);
+  assert.match(v1Html, /\.\/scripts\/render-site\.mjs\?v=1\.5\.8-live-data-status/);
   assert.match(v1Html, /<span id="todos-title">施工中<\/span>/);
   assert.match(v1Html, /<span id="thoughts-title">怪念头<\/span>/);
 });
@@ -188,14 +188,14 @@ test("version naming uses the new three-part small release format", async () => 
   const namingRules = await readFile("项目进度/2026-06-01_版本命名规则.md", "utf8");
 
   assert.match(readme, /当前阶段：V1\.5/);
-  assert.match(readme, /当前小版本：V1\.5\.7/);
+  assert.match(readme, /当前小版本：V1\.5\.8/);
   assert.match(readme, /当前主页视觉基准（V1\.4 桌面 \/ V1\.5 手机）/);
   assert.match(readme, /2400 x 1200/);
   assert.match(readme, /site_page_backups/);
   assert.match(readme, /CRON_SECRET/);
   assert.match(readme, /admin_sessions/);
   assert.match(readme, /HttpOnly cookie/);
-  assert.match(adminHtml, /<p class="admin-kicker">V1\.5\.7<\/p>/);
+  assert.match(adminHtml, /<p class="admin-kicker">V1\.5\.8<\/p>/);
   assert.match(namingRules, /当前阶段记为 `V1\.4`/);
   assert.match(namingRules, /V1\.4\.0\s*->\s*V1\.4 阶段的视觉定稿起点/);
   assert.match(namingRules, /V1\.4\.1\s*->\s*后台保存保护与数据备份补丁/);

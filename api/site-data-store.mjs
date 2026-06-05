@@ -295,8 +295,10 @@ export async function handleSiteDataRequest({
       }
     }
 
-    const localData = await readLocalData();
-    if (localData) return siteDataResponse("local", localData);
+    if (!env.VERCEL) {
+      const localData = await readLocalData();
+      if (localData) return siteDataResponse("local", localData);
+    }
 
     return siteDataResponse("static", assertValidSiteData(fallbackData));
   }

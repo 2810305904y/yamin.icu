@@ -13,6 +13,7 @@ import {
   escapeHtml,
   getVisibleSortedItems,
   loadLiveSiteData,
+  loadLiveSitePayload,
   renderChannels,
   renderProjects,
   renderThoughts,
@@ -82,6 +83,28 @@ test("homepage loads API site data when available and falls back to bundled data
 
   assert.equal(loaded.identity.title, "接口里的鸦珉.icu");
   assert.equal(fallback.identity.title, siteData.identity.title);
+});
+
+test("homepage waits longer for live data and prepares a visible fallback warning", async () => {
+  const rootHtml = await readFile("index.html", "utf8");
+  const v1Html = await readFile("v1/index.html", "utf8");
+  const styles = await readFile("v1/styles.css", "utf8");
+  const script = await readFile("v1/scripts/render-site.mjs", "utf8");
+  const fallbackPayload = await loadLiveSitePayload(async () => ({ ok: false, status: 502 }));
+
+  assert.equal(fallbackPayload.source, "static");
+  assert.match(fallbackPayload.apiError, /HTTP 502/);
+  assert.match(rootHtml, /data-load-message/);
+  assert.match(v1Html, /data-load-message/);
+  assert.match(rootHtml, /数据没有读取成功，请刷新重试。/);
+  assert.match(v1Html, /数据没有读取成功，请刷新重试。/);
+  assert.match(styles, /\.load-message\s*{[^}]*position:\s*fixed/s);
+  assert.match(styles, /\.load-message\[hidden\]/);
+  assert.match(script, /const LIVE_DATA_TIMEOUT = 4000/);
+  assert.match(script, /function setLiveDataMessage/);
+  assert.match(script, /数据没有读取成功，请刷新重试。/);
+  assert.match(script, /loadLiveSitePayload\(fetch,\s*\{ timeoutMs:\s*LIVE_DATA_TIMEOUT \}\)/);
+  assert.doesNotMatch(script, /timeoutMs:\s*1400/);
 });
 
 test("site title and signature copy use the current wording", async () => {
@@ -420,7 +443,7 @@ test("homepage uses a lightweight progress bar while live data and animations se
   assert.match(script, /function scheduleHomepageAnimations/);
   assert.match(script, /initializeThoughts:\s*false/);
   assert.match(script, /requestIdleCallback/);
-  assert.match(script, /timeoutMs:\s*1400/);
+  assert.match(script, /timeoutMs:\s*LIVE_DATA_TIMEOUT/);
 });
 
 test("site signature can become the first mobile logo without moving the desktop anchor", async () => {
@@ -502,13 +525,13 @@ test("homepage uses a fixed 2:1 design canvas inside a scaled viewport shell", a
   assert.match(styles, /\.load-progress\s*{[^}]*height:\s*2px/s);
 });
 
-test("mobile homepage switches to a vertical V1.5.6 layout without changing the desktop canvas block", async () => {
+test("mobile homepage switches to a vertical V1.5.8 layout without changing the desktop canvas block", async () => {
   const rootHtml = await readFile("index.html", "utf8");
   const v1Html = await readFile("v1/index.html", "utf8");
   const styles = await readFile("v1/styles.css", "utf8");
 
-  assert.match(rootHtml, /v=1\.5\.6-mobile-thought-travel/);
-  assert.match(v1Html, /v=1\.5\.6-mobile-thought-travel/);
+  assert.match(rootHtml, /v=1\.5\.8-live-data-status/);
+  assert.match(v1Html, /v=1\.5\.8-live-data-status/);
   assert.match(styles, /@media \(max-width:\s*760px\)\s*{/);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body\s*{[\s\S]*overflow-y:\s*auto/s);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body::before\s*{[\s\S]*background-image:\s*none/s);

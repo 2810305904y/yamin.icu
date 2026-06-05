@@ -22,6 +22,29 @@ test("site data API reads bundled content when no database or local copy exists"
   assert.equal(body.data.identity.title, "鸦珉.icu");
 });
 
+test("site data API ignores local preview data on Vercel without database config", async () => {
+  const localDraft = {
+    ...siteData,
+    identity: {
+      ...siteData.identity,
+      title: "不应该上线的本地草稿",
+    },
+  };
+
+  const response = await handleSiteDataRequest({
+    method: "GET",
+    headers: {},
+    env: { VERCEL: "1" },
+    fallbackData: siteData,
+    readLocalData: async () => localDraft,
+  });
+  const body = JSON.parse(response.body);
+
+  assert.equal(response.status, 200);
+  assert.equal(body.source, "static");
+  assert.equal(body.data.identity.title, "鸦珉.icu");
+});
+
 test("site data API rejects production writes without the admin token", async () => {
   const response = await handleSiteDataRequest({
     method: "PUT",
