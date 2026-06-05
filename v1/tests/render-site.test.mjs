@@ -114,14 +114,14 @@ test("homepage swaps the cloud layer to a scaled meme when live data falls back"
 
   assert.ok(memeAsset.length > 1000);
   assert.match(styles, /body\.live-data-fallback::before\s*{[^}]*this-is-fine\.png/s);
-  assert.match(styles, /body\.live-data-fallback::before\s*{[^}]*background-size:\s*auto 70%/s);
-  assert.doesNotMatch(styles, /body\.live-data-fallback::before\s*{[^}]*background-size:\s*auto (?:85|100)%/s);
+  assert.match(styles, /body\.live-data-fallback::before\s*{[^}]*background-size:\s*auto 40%/s);
+  assert.doesNotMatch(styles, /body\.live-data-fallback::before\s*{[^}]*background-size:\s*auto (?:70|85|100)%/s);
   assert.doesNotMatch(styles, /body\.live-data-fallback::before\s*{[^}]*background-size:\s*760px auto/s);
   assert.match(styles, /body\.live-data-fallback::before\s*{[^}]*animation:\s*fine-meme-scroll/s);
   assert.match(styles, /@keyframes fine-meme-scroll[\s\S]*-100vw 50%/);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body\.live-data-fallback::before\s*{[\s\S]*background-image:\s*url\("\.\/assets\/this-is-fine\.png"\)/s);
-  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body\.live-data-fallback::before\s*{[\s\S]*background-size:\s*auto 70%/s);
-  assert.doesNotMatch(styles, /@media \(max-width:\s*760px\)[\s\S]*body\.live-data-fallback::before\s*{[\s\S]*background-size:\s*auto (?:85|100)%/s);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body\.live-data-fallback::before\s*{[\s\S]*background-size:\s*auto 40%/s);
+  assert.doesNotMatch(styles, /@media \(max-width:\s*760px\)[\s\S]*body\.live-data-fallback::before\s*{[\s\S]*background-size:\s*auto (?:70|85|100)%/s);
   assert.doesNotMatch(styles, /@media \(max-width:\s*760px\)[\s\S]*body\.live-data-fallback::before\s*{[\s\S]*background-size:\s*620px auto/s);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body\.live-data-fallback::before\s*{[\s\S]*animation:\s*none/s);
   assert.doesNotMatch(styles, /@keyframes fine-meme-scroll-compact/);
@@ -554,8 +554,8 @@ test("mobile homepage switches to a vertical V1.5.9 layout without changing the 
   const v1Html = await readFile("v1/index.html", "utf8");
   const styles = await readFile("v1/styles.css", "utf8");
 
-  assert.match(rootHtml, /v=1\.5\.9-fine-data-fallback-70/);
-  assert.match(v1Html, /v=1\.5\.9-fine-data-fallback-70/);
+  assert.match(rootHtml, /v=1\.5\.9-fine-data-fallback-40/);
+  assert.match(v1Html, /v=1\.5\.9-fine-data-fallback-40/);
   assert.match(styles, /@media \(max-width:\s*760px\)\s*{/);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body\s*{[\s\S]*overflow-y:\s*auto/s);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body::before\s*{[\s\S]*background-image:\s*none/s);

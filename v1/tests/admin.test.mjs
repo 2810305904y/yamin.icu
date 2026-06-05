@@ -170,14 +170,14 @@ test("project cards keep a slightly slimmer desktop footprint", async () => {
   assert.doesNotMatch(siteStyles, /\.projects-grid\s*{[^}]*justify-self:\s*start/s);
   assert.doesNotMatch(siteStyles, /grid-template-columns:\s*minmax\(180px,\s*0\.86fr\)\s*minmax\(180px,\s*0\.86fr\)\s*minmax\(280px,\s*1\.2fr\)/);
   assert.doesNotMatch(siteStyles, /grid-template-columns:\s*minmax\(210px,\s*1fr\)\s*minmax\(210px,\s*1fr\)\s*minmax\(280px,\s*1\.28fr\)/);
-  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.5\.9-fine-data-fallback-70/);
-  assert.match(rootHtml, /\/v1\/scripts\/render-site\.mjs\?v=1\.5\.9-fine-data-fallback-70/);
+  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.5\.9-fine-data-fallback-40/);
+  assert.match(rootHtml, /\/v1\/scripts\/render-site\.mjs\?v=1\.5\.9-fine-data-fallback-40/);
   assert.match(rootHtml, /<span id="todos-title">施工中<\/span>/);
   assert.match(rootHtml, /<span id="thoughts-title">怪念头<\/span>/);
   assert.match(rootHtml, /<script nomodule>/);
   assert.match(rootHtml, /window\.location\.replace\("\/v1\/"\)/);
-  assert.match(v1Html, /\.\/styles\.css\?v=1\.5\.9-fine-data-fallback-70/);
-  assert.match(v1Html, /\.\/scripts\/render-site\.mjs\?v=1\.5\.9-fine-data-fallback-70/);
+  assert.match(v1Html, /\.\/styles\.css\?v=1\.5\.9-fine-data-fallback-40/);
+  assert.match(v1Html, /\.\/scripts\/render-site\.mjs\?v=1\.5\.9-fine-data-fallback-40/);
   assert.match(v1Html, /<span id="todos-title">施工中<\/span>/);
   assert.match(v1Html, /<span id="thoughts-title">怪念头<\/span>/);
 });
