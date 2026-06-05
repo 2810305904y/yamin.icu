@@ -88,6 +88,16 @@ body::after {
   animation: none;
 }
 
+body.live-data-fallback::before {
+  background-image: url("./assets/this-is-fine.png");
+  background-repeat: repeat-x;
+  background-size: 760px auto;
+  background-position: 0 50%;
+  filter: saturate(0.98) brightness(1.04);
+  opacity: 0.3;
+  animation: fine-meme-scroll 26s linear infinite;
+}
+
 .load-progress {
   position: fixed;
   top: 0;
@@ -977,6 +987,15 @@ svg {
     opacity: 0;
   }
 
+  body.live-data-fallback::before {
+    background-image: url("./assets/this-is-fine.png");
+    background-repeat: repeat-x;
+    background-size: 620px auto;
+    background-position: 0 42%;
+    opacity: 0.24;
+    animation: fine-meme-scroll-compact 24s linear infinite;
+  }
+
   .page {
     width: 100%;
     height: auto;
@@ -1371,6 +1390,24 @@ svg {
   }
   100% {
     background-position: -3720px 50%;
+  }
+}
+
+@keyframes fine-meme-scroll {
+  0% {
+    background-position: 0 50%;
+  }
+  100% {
+    background-position: -760px 50%;
+  }
+}
+
+@keyframes fine-meme-scroll-compact {
+  0% {
+    background-position: 0 42%;
+  }
+  100% {
+    background-position: -620px 42%;
   }
 }
 

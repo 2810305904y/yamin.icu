@@ -650,6 +650,17 @@ function setLiveDataMessage(message = "") {
   messageElement.hidden = true;
 }
 
+function setLiveDataFallbackState(enabled) {
+  if (typeof document === "undefined" || !document.body) return;
+
+  document.body.classList.toggle("live-data-fallback", enabled === true);
+  if (enabled === true) {
+    const cloudCanvas = document.querySelector(".cloud-canvas");
+    if (cloudCanvas) cloudCanvas.remove();
+    document.body.classList.remove("canvas-clouds-ready");
+  }
+}
+
 function requestIdleWork(callback, delay = 420) {
   if (typeof window === "undefined") {
     callback();
@@ -747,11 +758,13 @@ export async function loadLiveSiteData(fetchFn = fetch, options = {}) {
 }
 
 export async function mountLiveSite() {
+  setLiveDataFallbackState(false);
   mountSite(siteData, { initializeThoughts: false });
   setPageLoadState("content");
   const payload = await loadLiveSitePayload(fetch, { timeoutMs: LIVE_DATA_TIMEOUT });
   const shouldWarn = payload && (payload.source === "static" || payload.apiError || payload.databaseError);
   setLiveDataMessage(shouldWarn ? LIVE_DATA_FALLBACK_MESSAGE : "");
+  setLiveDataFallbackState(shouldWarn);
   mountSite(payload && payload.data ? payload.data : siteData, { initializeThoughts: false });
   setPageLoadState("complete");
   scheduleHomepageAnimations();
@@ -966,6 +979,7 @@ function createCloudTexture() {
 
 export function initCloudCanvasBackground() {
   if (!document.body || document.querySelector(".cloud-canvas")) return;
+  if (document.body.classList.contains("live-data-fallback")) return;
   if (!shouldUseCanvasClouds(readCloudRuntimeOptions())) return;
 
   const canvas = document.createElement("canvas");

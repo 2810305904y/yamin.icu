@@ -107,6 +107,22 @@ test("homepage waits longer for live data and prepares a visible fallback warnin
   assert.doesNotMatch(script, /timeoutMs:\s*1400/);
 });
 
+test("homepage swaps the cloud layer to a scrolling meme when live data falls back", async () => {
+  const memeAsset = await readFile("v1/assets/this-is-fine.png");
+  const styles = await readFile("v1/styles.css", "utf8");
+  const script = await readFile("v1/scripts/render-site.mjs", "utf8");
+
+  assert.ok(memeAsset.length > 1000);
+  assert.match(styles, /body\.live-data-fallback::before\s*{[^}]*this-is-fine\.png/s);
+  assert.match(styles, /body\.live-data-fallback::before\s*{[^}]*animation:\s*fine-meme-scroll/s);
+  assert.match(styles, /@keyframes fine-meme-scroll/);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body\.live-data-fallback::before\s*{[\s\S]*background-image:\s*url\("\.\/assets\/this-is-fine\.png"\)/s);
+  assert.match(script, /function setLiveDataFallbackState/);
+  assert.match(script, /classList\.toggle\("live-data-fallback"/);
+  assert.match(script, /document\.querySelector\("\.cloud-canvas"\)/);
+  assert.match(script, /setLiveDataFallbackState\(shouldWarn\)/);
+});
+
 test("site title and signature copy use the current wording", async () => {
   const rootHtml = await readFile("index.html", "utf8");
   const v1Html = await readFile("v1/index.html", "utf8");
@@ -525,13 +541,13 @@ test("homepage uses a fixed 2:1 design canvas inside a scaled viewport shell", a
   assert.match(styles, /\.load-progress\s*{[^}]*height:\s*2px/s);
 });
 
-test("mobile homepage switches to a vertical V1.5.8 layout without changing the desktop canvas block", async () => {
+test("mobile homepage switches to a vertical V1.5.9 layout without changing the desktop canvas block", async () => {
   const rootHtml = await readFile("index.html", "utf8");
   const v1Html = await readFile("v1/index.html", "utf8");
   const styles = await readFile("v1/styles.css", "utf8");
 
-  assert.match(rootHtml, /v=1\.5\.8-live-data-status/);
-  assert.match(v1Html, /v=1\.5\.8-live-data-status/);
+  assert.match(rootHtml, /v=1\.5\.9-fine-data-fallback/);
+  assert.match(v1Html, /v=1\.5\.9-fine-data-fallback/);
   assert.match(styles, /@media \(max-width:\s*760px\)\s*{/);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body\s*{[\s\S]*overflow-y:\s*auto/s);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body::before\s*{[\s\S]*background-image:\s*none/s);
