@@ -107,19 +107,21 @@ test("homepage waits longer for live data and prepares a visible fallback warnin
   assert.doesNotMatch(script, /timeoutMs:\s*1400/);
 });
 
-test("homepage swaps the cloud layer to a full-height meme when live data falls back", async () => {
+test("homepage swaps the cloud layer to a scaled meme when live data falls back", async () => {
   const memeAsset = await readFile("v1/assets/this-is-fine.png");
   const styles = await readFile("v1/styles.css", "utf8");
   const script = await readFile("v1/scripts/render-site.mjs", "utf8");
 
   assert.ok(memeAsset.length > 1000);
   assert.match(styles, /body\.live-data-fallback::before\s*{[^}]*this-is-fine\.png/s);
-  assert.match(styles, /body\.live-data-fallback::before\s*{[^}]*background-size:\s*auto 100%/s);
+  assert.match(styles, /body\.live-data-fallback::before\s*{[^}]*background-size:\s*auto 85%/s);
+  assert.doesNotMatch(styles, /body\.live-data-fallback::before\s*{[^}]*background-size:\s*auto 100%/s);
   assert.doesNotMatch(styles, /body\.live-data-fallback::before\s*{[^}]*background-size:\s*760px auto/s);
   assert.match(styles, /body\.live-data-fallback::before\s*{[^}]*animation:\s*fine-meme-scroll/s);
   assert.match(styles, /@keyframes fine-meme-scroll[\s\S]*-100vw 50%/);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body\.live-data-fallback::before\s*{[\s\S]*background-image:\s*url\("\.\/assets\/this-is-fine\.png"\)/s);
-  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body\.live-data-fallback::before\s*{[\s\S]*background-size:\s*auto 100%/s);
+  assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body\.live-data-fallback::before\s*{[\s\S]*background-size:\s*auto 85%/s);
+  assert.doesNotMatch(styles, /@media \(max-width:\s*760px\)[\s\S]*body\.live-data-fallback::before\s*{[\s\S]*background-size:\s*auto 100%/s);
   assert.doesNotMatch(styles, /@media \(max-width:\s*760px\)[\s\S]*body\.live-data-fallback::before\s*{[\s\S]*background-size:\s*620px auto/s);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body\.live-data-fallback::before\s*{[\s\S]*animation:\s*none/s);
   assert.doesNotMatch(styles, /@keyframes fine-meme-scroll-compact/);
@@ -552,8 +554,8 @@ test("mobile homepage switches to a vertical V1.5.9 layout without changing the 
   const v1Html = await readFile("v1/index.html", "utf8");
   const styles = await readFile("v1/styles.css", "utf8");
 
-  assert.match(rootHtml, /v=1\.5\.9-fine-data-fallback-large/);
-  assert.match(v1Html, /v=1\.5\.9-fine-data-fallback-large/);
+  assert.match(rootHtml, /v=1\.5\.9-fine-data-fallback-85/);
+  assert.match(v1Html, /v=1\.5\.9-fine-data-fallback-85/);
   assert.match(styles, /@media \(max-width:\s*760px\)\s*{/);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body\s*{[\s\S]*overflow-y:\s*auto/s);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body::before\s*{[\s\S]*background-image:\s*none/s);

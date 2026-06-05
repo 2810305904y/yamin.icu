@@ -91,7 +91,7 @@ body::after {
 body.live-data-fallback::before {
   background-image: url("./assets/this-is-fine.png");
   background-repeat: repeat-x;
-  background-size: auto 100%;
+  background-size: auto 85%;
   background-position: 0 50%;
   filter: saturate(0.98) brightness(1.04);
   opacity: 0.3;
@@ -990,7 +990,7 @@ svg {
   body.live-data-fallback::before {
     background-image: url("./assets/this-is-fine.png");
     background-repeat: repeat-x;
-    background-size: auto 100%;
+    background-size: auto 85%;
     background-position: 0 42%;
     opacity: 0.24;
     animation: none;
