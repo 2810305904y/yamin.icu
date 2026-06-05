@@ -91,7 +91,7 @@ body::after {
 body.live-data-fallback::before {
   background-image: url("./assets/this-is-fine.png");
   background-repeat: repeat-x;
-  background-size: 760px auto;
+  background-size: auto 100%;
   background-position: 0 50%;
   filter: saturate(0.98) brightness(1.04);
   opacity: 0.3;
@@ -990,10 +990,10 @@ svg {
   body.live-data-fallback::before {
     background-image: url("./assets/this-is-fine.png");
     background-repeat: repeat-x;
-    background-size: 620px auto;
+    background-size: auto 100%;
     background-position: 0 42%;
     opacity: 0.24;
-    animation: fine-meme-scroll-compact 24s linear infinite;
+    animation: none;
   }
 
   .page {
@@ -1398,16 +1398,7 @@ svg {
     background-position: 0 50%;
   }
   100% {
-    background-position: -760px 50%;
-  }
-}
-
-@keyframes fine-meme-scroll-compact {
-  0% {
-    background-position: 0 42%;
-  }
-  100% {
-    background-position: -620px 42%;
+    background-position: -100vw 50%;
   }
 }
 
