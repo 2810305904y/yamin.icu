@@ -7,6 +7,7 @@ node_modules/
 .vercel/
 
 # Local preview and browser artifacts
+.codex-chrome-preview/
 output/
 preview*.log
 data/site-data.local.json
