@@ -26,7 +26,9 @@ xn--idyr71g.icu
 
 正式服当前状态：
 
-- 主站已部署当前 `V1.6.15` 页面。
+- 主站已通过 GitHub `main` 分支触发 Vercel 自动部署到当前 `V1.6.24` 页面。
+- 正式域名 `https://xn--idyr71g.icu/` 已验证返回 `1.6.24-loading-stage-timeline` 资源标记。
+- 正式服 `/api/site-data` 可读取线上数据；未登录写入请求会被拒绝。
 
 测试服 Vercel 地址：
 
