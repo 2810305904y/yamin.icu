@@ -55,6 +55,14 @@ const THOUGHT_COMPACT_TARGET_SCALE_MIN = 0.9;
 const THOUGHT_COMPACT_TARGET_SCALE_MAX = 1.22;
 const LIVE_DATA_TIMEOUT = 4000;
 const LIVE_DATA_FALLBACK_MESSAGE = "数据没有读取成功，请刷新重试。";
+const LOADING_PROGRESS_RUN_TIME = 3000;
+const LOADING_STAGE_STEP_DELAY = 1000;
+const LOADING_STAGE_TIMELINE_DURATION = 3000;
+const LOADING_SUCCESS_READY_DELAY = 500;
+const LOADING_FAILURE_MINIMUM_VISIBLE_TIME = 4000;
+const LOADING_FAILURE_HOLD_DELAY = 2000;
+const LOADING_SUCCESS_HIDE_DELAY = 1500;
+const LOADING_FAILURE_HIDE_DELAY = 1100;
 const MAP_DESIGN_WIDTH = 2400;
 const MAP_DESIGN_HEIGHT = 1200;
 const COMPACT_VIEWPORT_WIDTH = 760;
@@ -62,6 +70,26 @@ const MAP_VIEWPORT_MARGIN = 44;
 const MAP_CONTENT_SCALE_MAX = 1.3;
 const MAP_CONTENT_TARGET_SCALE = 1.06;
 const thoughtTonePalette = ["green", "orange", "purple", "pink", "red", "yellow", "cyan", "blue"];
+const LOADING_STAGE_LABELS = {
+  reading: "正在读取项目地图",
+  todos: "正在翻找待办任务",
+  thoughts: "正在临时想一些怪念头",
+  clouds: "正在绘制棉花糖",
+  ready: "读取完成",
+  failed: "读取失败，显示备用页面",
+};
+const LOADING_STAGE_PROGRESS = {
+  reading: 0.34,
+  todos: 0.52,
+  thoughts: 0.68,
+  clouds: 0.82,
+  ready: 1,
+  failed: 0.6,
+};
+const LOADING_PROGRESS_INITIAL = 0.08;
+const LOADING_PROGRESS_STAGE_DURATION = 620;
+const LOADING_PROGRESS_FALLBACK_TARGET = 0.6;
+let loadingProgressTarget = LOADING_PROGRESS_INITIAL;
 
 export function escapeHtml(value) {
   return String(value == null ? "" : value)
@@ -635,6 +663,151 @@ function setPageLoadState(state) {
   }
 }
 
+function waitForBrowserDelay(delay) {
+  if (typeof window === "undefined" || delay <= 0) return Promise.resolve();
+
+  return new Promise((resolveDelay) => {
+    window.setTimeout(resolveDelay, delay);
+  });
+}
+
+function setLoadingProgressTarget(progress, options = {}) {
+  if (typeof document === "undefined") return;
+
+  const fill = document.querySelector("[data-loading-screen] .loading-progress-fill");
+  const rawProgress = Number(progress);
+  if (!Number.isFinite(rawProgress)) return;
+
+  const target = Math.min(1, Math.max(LOADING_PROGRESS_INITIAL, rawProgress));
+  loadingProgressTarget = options.allowBackwards === true ? target : Math.max(loadingProgressTarget, target);
+
+  if (!fill) return;
+
+  const duration = Math.max(0, Number(options.durationMs || LOADING_PROGRESS_STAGE_DURATION));
+  fill.style.animation = "none";
+  fill.style.transition = `transform ${duration}ms ease`;
+  fill.style.transform = `scaleX(${loadingProgressTarget})`;
+}
+
+function startLoadingProgressBaseline() {
+  setLoadingProgressTarget(LOADING_PROGRESS_FALLBACK_TARGET, {
+    durationMs: LOADING_PROGRESS_RUN_TIME,
+  });
+}
+
+function playLoadingStageTimeline() {
+  setLoadingStage("reading");
+  if (typeof window === "undefined") return Promise.resolve();
+
+  return new Promise((resolveTimeline) => {
+    window.setTimeout(() => setLoadingStage("todos"), LOADING_STAGE_STEP_DELAY);
+    window.setTimeout(() => setLoadingStage("thoughts"), LOADING_STAGE_STEP_DELAY * 2);
+    window.setTimeout(resolveTimeline, LOADING_STAGE_TIMELINE_DURATION);
+  });
+}
+
+function setLoadingStage(stage, options = {}) {
+  if (typeof document === "undefined") return false;
+
+  const screen = document.querySelector("[data-loading-screen]");
+  if (!screen) return false;
+
+  screen.hidden = false;
+  screen.dataset.loadingStage = stage;
+
+  const label = screen.querySelector("[data-loading-label]");
+  const labelText = LOADING_STAGE_LABELS[stage];
+  if (label && labelText) {
+    label.textContent = labelText;
+  }
+
+  if (LOADING_STAGE_PROGRESS[stage] != null) {
+    setLoadingProgressTarget(LOADING_STAGE_PROGRESS[stage], options);
+  }
+
+  return true;
+}
+
+function setLoadingScreenState(state) {
+  if (typeof document === "undefined") return;
+
+  const screen = document.querySelector("[data-loading-screen]");
+  if (!screen) return;
+
+  if (state !== "done") {
+    screen.hidden = false;
+  }
+
+  screen.dataset.loadingState = state;
+
+  if (state === "ready") {
+    setLoadingStage("ready", { durationMs: 420 });
+  } else if (state === "failed") {
+    setLoadingStage("failed", {
+      durationMs: 260,
+      allowBackwards: true,
+    });
+  } else if (state !== "done" && state !== "exiting" && !screen.dataset.loadingStage) {
+    setLoadingStage("reading");
+  }
+}
+
+function finishLoadingProgressToEnd() {
+  if (typeof document === "undefined" || typeof window === "undefined") return;
+
+  const fill = document.querySelector("[data-loading-screen] .loading-progress-fill");
+  if (!fill || typeof window.getComputedStyle !== "function") return;
+
+  const currentTransform = window.getComputedStyle(fill).transform;
+  fill.style.animation = "none";
+  fill.style.transition = "none";
+  fill.style.transform = currentTransform && currentTransform !== "none" ? currentTransform : "scaleX(0.08)";
+  fill.getBoundingClientRect();
+
+  window.requestAnimationFrame(() => {
+    fill.style.transition = "transform 420ms ease";
+    fill.style.transform = "scaleX(1)";
+  });
+}
+
+async function finishLoadingScreen(wasSuccessful = true, loadingStartedAt = Date.now()) {
+  if (!wasSuccessful) {
+    const elapsedLoadingTime = Math.max(0, Date.now() - loadingStartedAt);
+    await waitForBrowserDelay(Math.max(0, Math.max(LOADING_PROGRESS_RUN_TIME, LOADING_FAILURE_MINIMUM_VISIBLE_TIME) - elapsedLoadingTime));
+    setLoadingScreenState("failed");
+    await waitForBrowserDelay(LOADING_FAILURE_HOLD_DELAY);
+    const failedScreen = typeof document === "undefined" ? null : document.querySelector("[data-loading-screen]");
+    if (failedScreen) failedScreen.dataset.loadingResult = "failure";
+    setLoadingScreenState("exiting");
+    await waitForBrowserDelay(LOADING_FAILURE_HIDE_DELAY);
+    setLoadingScreenState("done");
+
+    if (typeof document === "undefined") return;
+
+    const screen = document.querySelector("[data-loading-screen]");
+    if (screen && screen.dataset.loadingState === "done") {
+      screen.hidden = true;
+    }
+    return;
+  }
+
+  finishLoadingProgressToEnd();
+  setLoadingScreenState("ready");
+  await waitForBrowserDelay(LOADING_SUCCESS_READY_DELAY);
+  const readyScreen = typeof document === "undefined" ? null : document.querySelector("[data-loading-screen]");
+  if (readyScreen) readyScreen.dataset.loadingResult = "success";
+  setLoadingScreenState("exiting");
+  await waitForBrowserDelay(LOADING_SUCCESS_HIDE_DELAY);
+  setLoadingScreenState("done");
+
+  if (typeof document === "undefined") return;
+
+  const screen = document.querySelector("[data-loading-screen]");
+  if (screen && screen.dataset.loadingState === "done") {
+    screen.hidden = true;
+  }
+}
+
 function setLiveDataMessage(message = "") {
   if (typeof document === "undefined") return;
 
@@ -661,42 +834,81 @@ function setLiveDataFallbackState(enabled) {
   }
 }
 
-function requestIdleWork(callback, delay = 420) {
-  if (typeof window === "undefined") {
-    callback();
-    return () => {};
-  }
+function scheduleHomepageCanvasBackground(options = {}) {
+  if (typeof document === "undefined") return Promise.resolve(false);
 
-  if (typeof window.requestIdleCallback === "function") {
-    const idleId = window.requestIdleCallback(callback, { timeout: delay + 900 });
-    return () => {
-      if (typeof window.cancelIdleCallback === "function") {
-        window.cancelIdleCallback(idleId);
-      }
-    };
-  }
-
-  const timer = window.setTimeout(callback, delay);
-  return () => window.clearTimeout(timer);
-}
-
-function scheduleHomepageAnimations() {
-  if (typeof document === "undefined") return;
-
-  const thoughts = document.querySelector("[data-thoughts]");
-  requestIdleWork(() => {
-    if (thoughts && document.body.contains(thoughts)) {
-      initThoughtSpace(thoughts);
+  const delayMs = Math.max(0, Number(options.delayMs || 0));
+  const shouldStart = typeof options.shouldStart === "function" ? options.shouldStart : () => true;
+  const beforeStart = typeof options.beforeStart === "function" ? options.beforeStart : null;
+  const waitForCanvasStartPaint = () => {
+    if (typeof window === "undefined" || typeof window.requestAnimationFrame !== "function") {
+      return waitForBrowserDelay(0);
     }
-  }, 420);
 
-  requestIdleWork(() => {
+    return new Promise((resolvePaint) => {
+      window.requestAnimationFrame(() => {
+        window.setTimeout(resolvePaint, 0);
+      });
+    });
+  };
+  const startCanvas = async () => {
+    if (!shouldStart()) return false;
+    if (beforeStart) beforeStart();
+    await waitForCanvasStartPaint();
+    if (!shouldStart()) return false;
+
     try {
       initCloudCanvasBackground();
+      return true;
     } catch (error) {
-      document.body.classList.remove("canvas-clouds-ready");
+      if (document.body) {
+        document.body.classList.remove("canvas-clouds-ready");
+      }
+      return false;
     }
-  }, 760);
+  };
+
+  return new Promise((resolveCanvas) => {
+    const scheduleStart = () => {
+      if (!shouldStart()) {
+        resolveCanvas(false);
+        return;
+      }
+
+      if (typeof window === "undefined") {
+        resolveCanvas(startCanvas());
+        return;
+      }
+
+      if (typeof window.requestIdleCallback === "function") {
+        window.requestIdleCallback(() => resolveCanvas(startCanvas()), { timeout: 600 });
+        return;
+      }
+
+      if (typeof window.requestAnimationFrame === "function") {
+        window.requestAnimationFrame(() => resolveCanvas(startCanvas()));
+        return;
+      }
+
+      window.setTimeout(() => resolveCanvas(startCanvas()), 0);
+    };
+
+    if (typeof window === "undefined" || delayMs <= 0) {
+      scheduleStart();
+      return;
+    }
+
+    window.setTimeout(scheduleStart, delayMs);
+  });
+}
+
+function prepareHomepageThoughts() {
+  if (typeof document === "undefined" || !document.body) return;
+
+  const thoughts = document.querySelector("[data-thoughts]");
+  if (thoughts && document.body.contains(thoughts)) {
+    initThoughtSpace(thoughts);
+  }
 }
 
 export function mountSite(data = siteData, options = {}) {
@@ -724,6 +936,23 @@ export function mountSite(data = siteData, options = {}) {
   if (targets.signatureSubtitle) targets.signatureSubtitle.textContent = data.identity.subtitle;
 }
 
+function isTestServiceHost(hostname = "") {
+  return (
+    hostname === "test.xn--idyr71g.icu" ||
+    hostname === "test.鸦珉.icu" ||
+    hostname === "yamin-icu-test.vercel.app" ||
+    hostname.indexOf("yamin-icu-test-") === 0
+  );
+}
+
+function shouldForceLiveDataFailure(currentLocation = typeof window === "undefined" ? null : window.location) {
+  if (!currentLocation) return false;
+
+  const hostname = currentLocation.hostname || "";
+  const pathname = (currentLocation.pathname || "").replace(/\/+$/, "") || "/";
+  return isTestServiceHost(hostname) && pathname === "/fail";
+}
+
 export async function loadLiveSitePayload(fetchFn = fetch, options = {}) {
   const timeoutMs = Math.max(0, Number(options.timeoutMs == null ? LIVE_DATA_TIMEOUT : options.timeoutMs));
   const requestOptions = { cache: "no-store" };
@@ -731,6 +960,10 @@ export async function loadLiveSitePayload(fetchFn = fetch, options = {}) {
   let timeoutId = 0;
 
   try {
+    if (options.forceFailure === true) {
+      return { source: "static", data: siteData, apiError: "测试服强制读取失败。" };
+    }
+
     if (timeoutMs && typeof AbortController !== "undefined") {
       abortController = new AbortController();
       requestOptions.signal = abortController.signal;
@@ -759,15 +992,32 @@ export async function loadLiveSiteData(fetchFn = fetch, options = {}) {
 
 export async function mountLiveSite() {
   setLiveDataFallbackState(false);
-  mountSite(siteData, { initializeThoughts: false });
+  const loadingStartedAt = Date.now();
+  loadingProgressTarget = LOADING_PROGRESS_INITIAL;
+  setLoadingScreenState("loading");
+  const stageTimelineReady = playLoadingStageTimeline();
+  startLoadingProgressBaseline();
   setPageLoadState("content");
-  const payload = await loadLiveSitePayload(fetch, { timeoutMs: LIVE_DATA_TIMEOUT });
+  const payload = await loadLiveSitePayload(fetch, {
+    timeoutMs: LIVE_DATA_TIMEOUT,
+    forceFailure: shouldForceLiveDataFailure(),
+  });
   const shouldWarn = payload && (payload.source === "static" || payload.apiError || payload.databaseError);
   setLiveDataMessage(shouldWarn ? LIVE_DATA_FALLBACK_MESSAGE : "");
   setLiveDataFallbackState(shouldWarn);
   mountSite(payload && payload.data ? payload.data : siteData, { initializeThoughts: false });
+  prepareHomepageThoughts();
   setPageLoadState("complete");
-  scheduleHomepageAnimations();
+  if (!shouldWarn) {
+    await stageTimelineReady;
+    const canvasReady = scheduleHomepageCanvasBackground({
+      delayMs: 0,
+      beforeStart: () => setLoadingStage("clouds"),
+      shouldStart: () => document.body && !document.body.classList.contains("live-data-fallback"),
+    });
+    await canvasReady;
+  }
+  await finishLoadingScreen(!shouldWarn, loadingStartedAt);
 }
 
 function readCloudRuntimeOptions() {

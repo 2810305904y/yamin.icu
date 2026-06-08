@@ -7,7 +7,15 @@ create table if not exists public.site_pages (
 alter table public.site_pages enable row level security;
 
 revoke all on table public.site_pages from anon, authenticated;
+grant select on table public.site_pages to anon;
 grant select, insert, update on table public.site_pages to service_role;
+
+drop policy if exists "Public homepage can be read" on public.site_pages;
+create policy "Public homepage can be read"
+on public.site_pages
+for select
+to anon
+using (id = 'homepage-v1');
 
 create or replace function public.set_site_pages_updated_at()
 returns trigger

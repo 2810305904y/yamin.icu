@@ -15,6 +15,8 @@ const mimeTypes = {
   ".mjs": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
   ".svg": "image/svg+xml; charset=utf-8",
+  ".txt": "text/plain; charset=utf-8",
+  ".xml": "application/xml; charset=utf-8",
   ".png": "image/png",
 };
 
@@ -29,6 +31,9 @@ async function readRequestBody(request) {
 function resolveRequestPath(url) {
   const pathname = decodeURIComponent(new URL(url, `http://localhost:${port}`).pathname);
   if (pathname === "/") {
+    return resolve(join(root, "index.html"));
+  }
+  if (pathname === "/fail") {
     return resolve(join(root, "index.html"));
   }
   if (pathname === "/v1") {

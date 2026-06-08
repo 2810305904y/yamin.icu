@@ -137,6 +137,169 @@ body.live-data-fallback::before {
   transform: scaleX(1);
 }
 
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: max(22px, env(safe-area-inset-top)) 22px max(22px, env(safe-area-inset-bottom));
+  contain: layout paint style;
+  overflow: hidden;
+  color: var(--ink);
+  background:
+    linear-gradient(180deg, rgba(235, 248, 255, 0.74), rgba(111, 190, 233, 0.66)),
+    linear-gradient(180deg, #eff9ff 0%, #9fd3f3 58%, #5fb3e3 100%);
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    opacity 520ms ease,
+    visibility 520ms ease;
+  animation: loading-screen-failsafe 8200ms ease forwards;
+}
+
+.loading-screen::before {
+  content: "";
+  position: absolute;
+  inset: -26vh -80vw;
+  z-index: -1;
+  background-image: url("./assets/cloud-layer.svg");
+  background-repeat: repeat-x;
+  background-size: 2600px 730px;
+  background-position: -420px 48%;
+  opacity: 0.58;
+  animation: loading-cloud-drift 38s linear infinite;
+}
+
+.loading-panel {
+  width: min(460px, calc(100vw - 44px));
+  display: grid;
+  gap: 6px;
+  justify-items: stretch;
+  padding: 26px 28px 30px;
+  border: 1px solid rgba(37, 99, 235, 0.22);
+  border-radius: 8px;
+  background: rgba(244, 250, 255, 0.52);
+  box-shadow: 0 24px 70px rgba(7, 24, 73, 0.14);
+  backdrop-filter: blur(14px);
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition:
+    opacity 1000ms ease,
+    transform 1000ms ease;
+}
+
+.loading-site,
+.loading-title {
+  margin: 0;
+  text-align: center;
+}
+
+.loading-site {
+  color: #1d4ed8;
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.loading-title {
+  color: #071849;
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 1.08;
+  text-wrap: balance;
+}
+
+.loading-progress-track {
+  width: 100%;
+  height: 8px;
+  margin-top: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.12);
+}
+
+.loading-progress-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: scaleX(0.08);
+  transform-origin: left center;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #38bdf8, #2563eb 62%, #ec4899);
+  box-shadow: 0 0 18px rgba(37, 99, 235, 0.34);
+  will-change: transform;
+  transition: transform 220ms ease;
+}
+
+.loading-screen[data-loading-state="loading"] .loading-progress-fill {
+  animation: none;
+}
+
+.loading-screen[data-loading-state="ready"] .loading-progress-fill,
+.loading-screen[data-loading-result="success"][data-loading-state="done"] .loading-progress-fill {
+  transform: scaleX(1);
+  transition-duration: 220ms;
+  transition-timing-function: ease;
+  animation: none;
+}
+
+.loading-screen[data-loading-result="success"][data-loading-state="exiting"] .loading-progress-fill {
+  transform: scaleX(1);
+  transition-duration: 220ms;
+  transition-timing-function: ease;
+  animation: none;
+}
+
+.loading-screen[data-loading-state="failed"] .loading-progress-fill {
+  transform: scaleX(0.6);
+  background: linear-gradient(90deg, #f59e0b, #ef4444);
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.22);
+  transition-duration: 160ms;
+  transition-timing-function: ease;
+  animation: none;
+}
+
+.loading-screen[data-loading-result="failure"][data-loading-state="exiting"] .loading-progress-fill {
+  transform: scaleX(0.6);
+  background: linear-gradient(90deg, #f59e0b, #ef4444);
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.22);
+  transition-duration: 160ms;
+  transition-timing-function: ease;
+  animation: none;
+}
+
+.loading-screen[data-loading-state="exiting"] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: none;
+  animation: none;
+}
+
+.loading-screen[data-loading-state="done"] {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  animation: none;
+}
+
+.loading-screen[data-loading-result="failure"][data-loading-state="exiting"] {
+  animation: loading-screen-failure-exit 1100ms ease forwards;
+}
+
+.loading-screen[data-loading-result="success"][data-loading-state="exiting"] {
+  animation: loading-screen-success-exit 1500ms ease forwards;
+}
+
+.loading-screen[data-loading-result="failure"][data-loading-state="exiting"] .loading-panel {
+  animation: loading-panel-failure-exit 1100ms ease forwards;
+}
+
+.loading-screen[data-loading-result="success"][data-loading-state="exiting"] .loading-panel {
+  animation: loading-panel-success-exit 1500ms ease forwards;
+}
+
 .load-message {
   position: fixed;
   top: max(14px, env(safe-area-inset-top));
@@ -996,6 +1159,16 @@ svg {
     animation: none;
   }
 
+  .loading-panel {
+    width: min(100%, 360px);
+    gap: 6px;
+    padding: 24px 22px 26px;
+  }
+
+  .loading-title {
+    font-size: 24px;
+  }
+
   .page {
     width: 100%;
     height: auto;
@@ -1402,6 +1575,87 @@ svg {
   }
 }
 
+@keyframes loading-cloud-drift {
+  0% {
+    background-position: -420px 48%;
+  }
+  100% {
+    background-position: -1740px 48%;
+  }
+}
+
+@keyframes loading-progress-breathe {
+  0%,
+  100% {
+    filter: saturate(1);
+  }
+
+  50% {
+    filter: saturate(1.2) brightness(1.04);
+  }
+}
+
+@keyframes loading-screen-failsafe {
+  0%,
+  88% {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes loading-screen-failure-exit {
+  0% {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  100% {
+    opacity: 0;
+    visibility: visible;
+  }
+}
+
+@keyframes loading-screen-success-exit {
+  0% {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  100% {
+    opacity: 0;
+    visibility: visible;
+  }
+}
+
+@keyframes loading-panel-success-exit {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.99);
+  }
+}
+
+@keyframes loading-panel-failure-exit {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+}
+
 @keyframes load-progress-pulse {
   0%,
   100% {
@@ -1424,6 +1678,16 @@ svg {
 
   body::before {
     transform: none;
+  }
+
+  .loading-screen,
+  .loading-screen::before,
+  .loading-screen[data-loading-state="loading"] .loading-progress-fill {
+    animation: none !important;
+  }
+
+  .loading-screen[data-loading-state="loading"] .loading-progress-fill {
+    transform: scaleX(0.6);
   }
 }
 

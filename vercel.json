@@ -3,6 +3,10 @@
   "cleanUrls": true,
   "rewrites": [
     {
+      "source": "/fail",
+      "destination": "/"
+    },
+    {
       "source": "/styles.css",
       "destination": "/v1/styles.css"
     },

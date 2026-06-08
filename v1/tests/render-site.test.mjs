@@ -103,7 +103,7 @@ test("homepage waits longer for live data and prepares a visible fallback warnin
   assert.match(script, /const LIVE_DATA_TIMEOUT = 4000/);
   assert.match(script, /function setLiveDataMessage/);
   assert.match(script, /数据没有读取成功，请刷新重试。/);
-  assert.match(script, /loadLiveSitePayload\(fetch,\s*\{ timeoutMs:\s*LIVE_DATA_TIMEOUT \}\)/);
+  assert.match(script, /loadLiveSitePayload\(fetch,\s*\{\s*timeoutMs:\s*LIVE_DATA_TIMEOUT,\s*forceFailure:\s*shouldForceLiveDataFailure\(\),\s*\}\)/);
   assert.doesNotMatch(script, /timeoutMs:\s*1400/);
 });
 
@@ -138,6 +138,10 @@ test("site title and signature copy use the current wording", async () => {
   assert.equal(siteData.identity.subtitle, "一张不太正经的项目地图");
   assert.match(rootHtml, /<title>鸦珉\.icu<\/title>/);
   assert.match(v1Html, /<title>鸦珉\.icu<\/title>/);
+  assert.match(rootHtml, /鸦珉\.icu 测试服/);
+  assert.match(v1Html, /鸦珉\.icu 测试服/);
+  assert.match(rootHtml, /test\.xn--idyr71g\.icu/);
+  assert.match(v1Html, /test\.xn--idyr71g\.icu/);
   assert.doesNotMatch(rootHtml, /<title>[^<]*项目地图[^<]*<\/title>/);
   assert.doesNotMatch(v1Html, /<title>[^<]*项目地图[^<]*<\/title>/);
   assert.doesNotMatch(rootHtml, /项目地图 V1/);
@@ -431,24 +435,43 @@ test("todo tones support expanded color options", async () => {
   assert.match(script, /"black", "white"/);
 });
 
-test("root homepage renders directly and keeps a legacy module fallback", async () => {
+test("root homepage renders directly without delayed V1 redirect fallback", async () => {
   const rootHtml = await readFile("index.html", "utf8");
   const v1Html = await readFile("v1/index.html", "utf8");
 
   assert.doesNotMatch(rootHtml, /http-equiv="refresh"/i);
   assert.doesNotMatch(rootHtml, /url=\/v1/i);
-  assert.match(rootHtml, /href="\/"/);
+  assert.match(rootHtml, /rel="canonical" href="https:\/\/xn--idyr71g\.icu\/"/);
+  assert.match(v1Html, /rel="canonical" href="https:\/\/xn--idyr71g\.icu\/"/);
+  assert.match(rootHtml, /rel="sitemap" type="application\/xml" href="\/sitemap\.xml"/);
+  assert.match(v1Html, /rel="sitemap" type="application\/xml" href="\/sitemap\.xml"/);
+  assert.match(rootHtml, /SiteNavigationElement/);
+  assert.match(v1Html, /SiteNavigationElement/);
   assert.match(rootHtml, /href="\/v1\/styles\.css(?:\?[^"]+)?"/);
   assert.match(rootHtml, /src="\/v1\/scripts\/render-site\.mjs(?:\?[^"]+)?"/);
   assert.match(rootHtml, /<script nomodule>/);
   assert.match(rootHtml, /window\.location\.replace\("\/v1\/"\)/);
-  assert.match(rootHtml, /data-module-fallback/);
-  assert.match(rootHtml, /window\.setTimeout\(function \(\)/);
+  assert.doesNotMatch(rootHtml, /data-module-fallback/);
+  assert.doesNotMatch(rootHtml, /document\.querySelector\("\[data-projects\]"\)[\s\S]*window\.location\.replace\("\/v1\/"\)/);
   assert.match(rootHtml, /data-projects/);
   assert.match(v1Html, /thought-pill pill-green is-visible/);
   assert.match(v1Html, /data-thought-pill/);
   assert.match(v1Html, /AI革命/);
   assert.doesNotMatch(v1Html, /<span class="project-link">[\s\S]*?<span aria-hidden="true">›<\/span>[\s\S]*?<span class="status/s);
+});
+
+test("public crawl files expose the production sitemap", async () => {
+  const sitemap = await readFile("sitemap.xml", "utf8");
+  const robots = await readFile("robots.txt", "utf8");
+
+  assert.match(sitemap, /<urlset xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9">/);
+  assert.match(sitemap, /<loc>https:\/\/xn--idyr71g\.icu\/<\/loc>/);
+  assert.match(sitemap, /<lastmod>2026-06-07<\/lastmod>/);
+  assert.doesNotMatch(sitemap, /\/admin/);
+  assert.match(robots, /User-agent: \*/);
+  assert.match(robots, /Disallow: \/admin/);
+  assert.match(robots, /Disallow: \/api\//);
+  assert.match(robots, /Sitemap: https:\/\/xn--idyr71g\.icu\/sitemap\.xml/);
 });
 
 test("homepage uses a lightweight progress bar while live data and animations settle", async () => {
@@ -464,10 +487,133 @@ test("homepage uses a lightweight progress bar while live data and animations se
   assert.match(script, /function setPageLoadState/);
   assert.match(script, /setPageLoadState\("content"\)/);
   assert.match(script, /setPageLoadState\("complete"\)/);
-  assert.match(script, /function scheduleHomepageAnimations/);
+  assert.match(script, /function scheduleHomepageCanvasBackground/);
+  assert.match(script, /function prepareHomepageThoughts/);
   assert.match(script, /initializeThoughts:\s*false/);
-  assert.match(script, /requestIdleCallback/);
+  assert.match(script, /requestAnimationFrame/);
   assert.match(script, /timeoutMs:\s*LIVE_DATA_TIMEOUT/);
+});
+
+test("homepage keeps a V1.6 loading cover until critical live data is rendered", async () => {
+  const rootHtml = await readFile("index.html", "utf8");
+  const v1Html = await readFile("v1/index.html", "utf8");
+  const styles = await readFile("v1/styles.css", "utf8");
+  const script = await readFile("v1/scripts/render-site.mjs", "utf8");
+
+  assert.match(rootHtml, /data-loading-screen/);
+  assert.match(v1Html, /data-loading-screen/);
+  assert.match(rootHtml, /data-loading-screen data-loading-state="loading"/);
+  assert.match(v1Html, /data-loading-screen data-loading-state="loading"/);
+  assert.doesNotMatch(rootHtml, /data-loading-screen data-loading-state="boot"/);
+  assert.doesNotMatch(v1Html, /data-loading-screen data-loading-state="boot"/);
+  assert.match(rootHtml, /data-loading-label[^>]*>正在读取项目地图/);
+  assert.match(styles, /\.loading-screen\s*{[^}]*position:\s*fixed/s);
+  assert.match(styles, /\.loading-screen\s*{[^}]*z-index:\s*80/s);
+  assert.match(styles, /\.loading-screen\s*{[^}]*animation:\s*loading-screen-failsafe 8200ms ease forwards/s);
+  assert.match(styles, /\.loading-panel\s*{[^}]*gap:\s*6px/s);
+  assert.match(styles, /\.loading-site\s*{[^}]*font-size:\s*22px/s);
+  assert.match(styles, /\.loading-site\s*{[^}]*line-height:\s*1/s);
+  assert.match(styles, /\.loading-title\s*{[^}]*font-size:\s*28px/s);
+  assert.match(styles, /\.loading-title\s*{[^}]*line-height:\s*1\.08/s);
+  assert.match(styles, /\.loading-progress-track\s*{[^}]*margin-top:\s*12px/s);
+  assert.doesNotMatch(styles, /\.loading-site\s*{[^}]*-webkit-text-fill-color:\s*transparent/s);
+  assert.match(styles, /\.loading-progress-fill\s*{[^}]*transform:\s*scaleX\(0\.08\)/s);
+  assert.match(styles, /\.loading-progress-fill\s*{[^}]*will-change:\s*transform/s);
+  assert.match(styles, /\.loading-progress-fill\s*{[^}]*transition:\s*transform 220ms ease/s);
+  assert.match(styles, /\.loading-screen\[data-loading-state="loading"\]\s*\.loading-progress-fill\s*{[^}]*animation:\s*none/s);
+  assert.doesNotMatch(styles, /loading-progress-ramp 3000ms/);
+  assert.doesNotMatch(styles, /\.loading-screen\[data-loading-state="loading"\]\s*\.loading-progress-fill\s*{[^}]*transform:\s*scaleX\(0\.82\)/s);
+  assert.doesNotMatch(styles, /\.loading-screen\[data-loading-state="loading"\]\s*\.loading-progress-fill\s*{[^}]*animation:\s*loading-progress-breathe/s);
+  assert.doesNotMatch(styles, /@keyframes loading-progress-ramp/);
+  assert.match(styles, /\.loading-screen\[data-loading-state="ready"\][\s\S]*\.loading-progress-fill\s*{[^}]*transform:\s*scaleX\(1\)/s);
+  assert.match(styles, /\.loading-screen\[data-loading-state="ready"\][\s\S]*\.loading-progress-fill\s*{[^}]*transition-duration:\s*220ms/s);
+  assert.match(styles, /\.loading-screen\[data-loading-state="done"\]\s*{[^}]*visibility:\s*hidden/s);
+  assert.match(styles, /\.loading-screen\[data-loading-state="done"\]\s*{[^}]*animation:\s*none/s);
+  assert.match(styles, /\.loading-screen\[data-loading-state="exiting"\]\s*{[^}]*visibility:\s*visible/s);
+  assert.match(styles, /\.loading-screen\[data-loading-result="success"\]\[data-loading-state="exiting"\]\s*{[^}]*animation:\s*loading-screen-success-exit 1500ms ease forwards/s);
+  assert.match(styles, /\.loading-screen\[data-loading-result="success"\]\[data-loading-state="exiting"\]\s*\.loading-panel\s*{[^}]*animation:\s*loading-panel-success-exit 1500ms ease forwards/s);
+  assert.match(styles, /\.loading-screen\[data-loading-result="success"\]\[data-loading-state="exiting"\]\s*\.loading-progress-fill\s*{[^}]*transform:\s*scaleX\(1\)/s);
+  assert.match(styles, /@keyframes loading-screen-success-exit\s*{[\s\S]*0%\s*{[\s\S]*opacity:\s*1[\s\S]*100%\s*{[\s\S]*opacity:\s*0/s);
+  assert.match(styles, /\.loading-screen\[data-loading-result="failure"\]\[data-loading-state="exiting"\]\s*{[^}]*animation:\s*loading-screen-failure-exit 1100ms ease forwards/s);
+  assert.match(styles, /\.loading-screen\[data-loading-result="failure"\]\[data-loading-state="exiting"\]\s*\.loading-panel\s*{[^}]*animation:\s*loading-panel-failure-exit 1100ms ease forwards/s);
+  assert.match(styles, /@keyframes loading-screen-failure-exit\s*{[\s\S]*0%\s*{[\s\S]*opacity:\s*1[\s\S]*100%\s*{[\s\S]*opacity:\s*0/s);
+  assert.match(styles, /@keyframes loading-panel-failure-exit\s*{[\s\S]*0%\s*{[\s\S]*opacity:\s*1[\s\S]*100%\s*{[\s\S]*transform:\s*translateY\(-10px\) scale\(0\.98\)/s);
+  assert.match(styles, /\.loading-panel\s*{[^}]*background:\s*rgba\(244,\s*250,\s*255,\s*0\.52\)/s);
+  assert.match(script, /const LOADING_PROGRESS_RUN_TIME = 3000/);
+  assert.match(script, /const LOADING_STAGE_STEP_DELAY = 1000/);
+  assert.match(script, /const LOADING_STAGE_TIMELINE_DURATION = 3000/);
+  assert.doesNotMatch(script, /const LOADING_CANVAS_START_DELAY = 2000/);
+  assert.match(script, /const LOADING_SUCCESS_READY_DELAY = 500/);
+  assert.match(script, /const LOADING_FAILURE_MINIMUM_VISIBLE_TIME = 4000/);
+  assert.match(script, /const LOADING_FAILURE_HOLD_DELAY = 2000/);
+  assert.match(script, /const LOADING_SUCCESS_HIDE_DELAY = 1500/);
+  assert.match(script, /const LOADING_FAILURE_HIDE_DELAY = 1100/);
+  assert.doesNotMatch(script, /const LOADING_FAILURE_HOLD_DELAY = 760/);
+  assert.match(script, /const LOADING_STAGE_LABELS = \{/);
+  assert.match(script, /reading:\s*"正在读取项目地图"/);
+  assert.match(script, /todos:\s*"正在翻找待办任务"/);
+  assert.match(script, /thoughts:\s*"正在临时想一些怪念头"/);
+  assert.match(script, /clouds:\s*"正在绘制棉花糖"/);
+  assert.match(script, /const LOADING_STAGE_PROGRESS = \{/);
+  assert.match(script, /function setLoadingScreenState/);
+  assert.match(script, /function setLoadingStage/);
+  assert.match(script, /function setLoadingProgressTarget/);
+  assert.match(script, /function startLoadingProgressBaseline/);
+  assert.match(script, /function playLoadingStageTimeline/);
+  assert.match(script, /setLoadingStage\("reading"\);\s*if \(typeof window === "undefined"\) return Promise\.resolve\(\);\s*return new Promise\(\(resolveTimeline\) => \{\s*window\.setTimeout\(\(\) => setLoadingStage\("todos"\),\s*LOADING_STAGE_STEP_DELAY\);\s*window\.setTimeout\(\(\) => setLoadingStage\("thoughts"\),\s*LOADING_STAGE_STEP_DELAY \* 2\);\s*window\.setTimeout\(resolveTimeline,\s*LOADING_STAGE_TIMELINE_DURATION\);\s*\}\)/s);
+  assert.match(script, /setLoadingProgressTarget\(LOADING_PROGRESS_FALLBACK_TARGET,\s*\{\s*durationMs:\s*LOADING_PROGRESS_RUN_TIME,\s*\}\)/);
+  assert.match(script, /function finishLoadingProgressToEnd/);
+  assert.match(script, /function finishLoadingScreen/);
+  assert.match(script, /setLoadingScreenState\("loading"\)/);
+  assert.doesNotMatch(script, /LOADING_PROGRESS_FIRST_STEP_TIME/);
+  assert.doesNotMatch(script, /LOADING_SUCCESS_MINIMUM_VISIBLE_TIME/);
+  assert.match(script, /finishLoadingProgressToEnd\(\);\s*setLoadingScreenState\("ready"\);\s*await waitForBrowserDelay\(LOADING_SUCCESS_READY_DELAY\);\s*const readyScreen[\s\S]*readyScreen\.dataset\.loadingResult = "success";\s*setLoadingScreenState\("exiting"\);\s*await waitForBrowserDelay\(LOADING_SUCCESS_HIDE_DELAY\);\s*setLoadingScreenState\("done"\)/s);
+  assert.match(script, /fill\.style\.animation = "none";\s*fill\.style\.transition = "none";\s*fill\.style\.transform = currentTransform && currentTransform !== "none" \? currentTransform : "scaleX\(0\.08\)";\s*fill\.getBoundingClientRect\(\);\s*window\.requestAnimationFrame\(\(\) => \{\s*fill\.style\.transition = "transform 420ms ease";\s*fill\.style\.transform = "scaleX\(1\)";\s*\}\)/s);
+  assert.doesNotMatch(script, /setLoadingScreenState\("loading"\);\s*scheduleHomepageCanvasBackground\(\);\s*setPageLoadState\("content"\)/s);
+  assert.match(script, /setLoadingScreenState\("loading"\);\s*const stageTimelineReady = playLoadingStageTimeline\(\);\s*startLoadingProgressBaseline\(\);\s*setPageLoadState\("content"\);\s*const payload = await loadLiveSitePayload\(fetch,\s*\{\s*timeoutMs:\s*LIVE_DATA_TIMEOUT,\s*forceFailure:\s*shouldForceLiveDataFailure\(\),\s*\}\)/s);
+  assert.doesNotMatch(script, /setLoadingScreenState\("loading"\);\s*mountSite\(siteData,\s*\{ initializeThoughts:\s*false \}\)/s);
+  assert.match(script, /mountSite\(payload && payload\.data \? payload\.data : siteData,\s*\{ initializeThoughts:\s*false \}\);\s*prepareHomepageThoughts\(\);\s*setPageLoadState\("complete"\);\s*if \(!shouldWarn\) \{\s*await stageTimelineReady;\s*const canvasReady = scheduleHomepageCanvasBackground\(\{\s*delayMs:\s*0,[\s\S]*?beforeStart:\s*\(\) => setLoadingStage\("clouds"\),[\s\S]*?\}\);\s*await canvasReady;\s*\}\s*await finishLoadingScreen\(!shouldWarn,\s*loadingStartedAt\)/s);
+  assert.doesNotMatch(script, /if \(!shouldWarn\) \{\s*setLoadingStage\("todos"\)/);
+  assert.doesNotMatch(script, /if \(!shouldWarn\) \{\s*setLoadingStage\("thoughts"\)/);
+  assert.match(script, /if \(!shouldWarn\) \{\s*await stageTimelineReady;\s*const canvasReady = scheduleHomepageCanvasBackground/);
+  assert.doesNotMatch(script, /await finishLoadingScreen\(!shouldWarn,\s*loadingStartedAt\);\s*if \(!shouldWarn\) \{\s*scheduleHomepageCanvasBackground/);
+  assert.match(script, /window\.requestIdleCallback\(\(\) => resolveCanvas\(startCanvas\(\)\),\s*\{\s*timeout:\s*600\s*\}\)/);
+  assert.match(script, /window\.setTimeout\(scheduleStart,\s*delayMs\)/);
+  assert.doesNotMatch(script, /await finishLoadingScreen\(!shouldWarn,\s*loadingStartedAt\);\s*scheduleHomepageAnimations\(\);/s);
+  assert.match(script, /requestOptions\.signal = abortController\.signal/);
+  assert.match(script, /abortController\.abort\(\)/);
+});
+
+test("test service fail route forces the homepage fallback path", async () => {
+  const vercelConfig = await readFile("vercel.json", "utf8");
+  const server = await readFile("v1/server.mjs", "utf8");
+  const script = await readFile("v1/scripts/render-site.mjs", "utf8");
+
+  assert.match(vercelConfig, /"source": "\/fail"[\s\S]*"destination": "\/"/);
+  assert.match(server, /pathname === "\/fail"/);
+  assert.match(script, /function shouldForceLiveDataFailure/);
+  assert.match(script, /pathname === "\/fail"/);
+  assert.match(script, /test\.xn--idyr71g\.icu/);
+  assert.match(script, /if \(options\.forceFailure === true\)/);
+  assert.match(script, /forceFailure:\s*shouldForceLiveDataFailure\(\)/);
+});
+
+test("homepage shows a stuck failure state when live data falls back", async () => {
+  const styles = await readFile("v1/styles.css", "utf8");
+  const script = await readFile("v1/scripts/render-site.mjs", "utf8");
+
+  assert.match(styles, /\.loading-screen\[data-loading-state="failed"\]\s*\.loading-progress-fill\s*{[^}]*transform:\s*scaleX\(0\.6\)/s);
+  assert.match(styles, /\.loading-screen\[data-loading-state="failed"\]\s*\.loading-progress-fill\s*{[^}]*animation:\s*none/s);
+  assert.match(styles, /\.loading-screen\[data-loading-state="failed"\]\s*\.loading-progress-fill\s*{[^}]*background:\s*linear-gradient\(90deg,\s*#f59e0b,\s*#ef4444\)/s);
+  assert.match(styles, /\.loading-screen\[data-loading-result="failure"\]\[data-loading-state="exiting"\]\s*\.loading-progress-fill\s*{[^}]*transform:\s*scaleX\(0\.6\)/s);
+  assert.match(script, /function finishLoadingScreen\(wasSuccessful = true,\s*loadingStartedAt = Date\.now\(\)\)/);
+  assert.match(script, /const elapsedLoadingTime = Math\.max\(0,\s*Date\.now\(\) - loadingStartedAt\)/);
+  assert.match(script, /await waitForBrowserDelay\(Math\.max\(0,\s*Math\.max\(LOADING_PROGRESS_RUN_TIME,\s*LOADING_FAILURE_MINIMUM_VISIBLE_TIME\) - elapsedLoadingTime\)\)/);
+  assert.match(script, /setLoadingScreenState\("failed"\)/);
+  assert.match(script, /setLoadingStage\("failed",\s*\{\s*durationMs:\s*260,\s*allowBackwards:\s*true,\s*\}\)/);
+  assert.match(script, /failedScreen\.dataset\.loadingResult = "failure";\s*setLoadingScreenState\("exiting"\);\s*await waitForBrowserDelay\(LOADING_FAILURE_HIDE_DELAY\);\s*setLoadingScreenState\("done"\)/s);
+  assert.match(script, /"读取失败，显示备用页面"/);
+  assert.doesNotMatch(script, /state === "ready" \|\| state === "done" \|\| state === "exiting" \? "读取完成"/);
 });
 
 test("site signature can become the first mobile logo without moving the desktop anchor", async () => {
@@ -549,13 +695,13 @@ test("homepage uses a fixed 2:1 design canvas inside a scaled viewport shell", a
   assert.match(styles, /\.load-progress\s*{[^}]*height:\s*2px/s);
 });
 
-test("mobile homepage switches to a vertical V1.5.9 layout without changing the desktop canvas block", async () => {
+test("mobile homepage switches to a vertical V1.6 layout without changing the desktop canvas block", async () => {
   const rootHtml = await readFile("index.html", "utf8");
   const v1Html = await readFile("v1/index.html", "utf8");
   const styles = await readFile("v1/styles.css", "utf8");
 
-  assert.match(rootHtml, /v=1\.5\.9-fine-data-fallback-40/);
-  assert.match(v1Html, /v=1\.5\.9-fine-data-fallback-40/);
+  assert.match(rootHtml, /v=1\.6\.24-loading-stage-timeline/);
+  assert.match(v1Html, /v=1\.6\.24-loading-stage-timeline/);
   assert.match(styles, /@media \(max-width:\s*760px\)\s*{/);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body\s*{[\s\S]*overflow-y:\s*auto/s);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body::before\s*{[\s\S]*background-image:\s*none/s);

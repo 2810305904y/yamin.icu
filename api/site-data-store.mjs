@@ -82,17 +82,34 @@ function isOnlineSaveDisabled({ headers = {}, env = {} }) {
   return isTestServiceHost(host);
 }
 
-function hasSupabaseConfig(env = {}) {
+function hasSupabaseWriteConfig(env = {}) {
   return Boolean(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY);
 }
 
-function getSupabaseSettings(env = {}) {
+function hasSupabaseReadConfig(env = {}) {
+  return Boolean(
+    (env.SITE_DATA_READ_SUPABASE_URL && (env.SITE_DATA_READ_SUPABASE_KEY || env.SITE_DATA_READ_SUPABASE_SERVICE_ROLE_KEY)) ||
+    hasSupabaseWriteConfig(env)
+  );
+}
+
+function getSupabaseWriteSettings(env = {}) {
   return {
     url: String(env.SUPABASE_URL || "").replace(/\/$/, ""),
     key: String(env.SUPABASE_SERVICE_ROLE_KEY || ""),
     table: String(env.SITE_DATA_TABLE || DEFAULT_TABLE),
     backupTable: String(env.SITE_DATA_BACKUP_TABLE || DEFAULT_BACKUP_TABLE),
     pageId: String(env.SITE_DATA_ID || DEFAULT_PAGE_ID),
+  };
+}
+
+function getSupabaseReadSettings(env = {}) {
+  return {
+    url: String(env.SITE_DATA_READ_SUPABASE_URL || env.SUPABASE_URL || "").replace(/\/$/, ""),
+    key: String(env.SITE_DATA_READ_SUPABASE_KEY || env.SITE_DATA_READ_SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SERVICE_ROLE_KEY || ""),
+    table: String(env.SITE_DATA_READ_TABLE || env.SITE_DATA_TABLE || DEFAULT_TABLE),
+    backupTable: String(env.SITE_DATA_BACKUP_TABLE || DEFAULT_BACKUP_TABLE),
+    pageId: String(env.SITE_DATA_READ_ID || env.SITE_DATA_ID || DEFAULT_PAGE_ID),
   };
 }
 
@@ -142,8 +159,7 @@ async function defaultWriteLocalData(data) {
   await writeFile(LOCAL_DATA_PATH, `${JSON.stringify(data, null, 2)}\n`, "utf8");
 }
 
-async function readSupabaseData({ env, fetchFn }) {
-  const settings = getSupabaseSettings(env);
+async function readSupabaseData({ env, fetchFn, settings = getSupabaseReadSettings(env) }) {
   const url = `${settings.url}/rest/v1/${settings.table}?select=data&id=eq.${encodeURIComponent(settings.pageId)}&limit=1`;
   const response = await fetchFn(url, {
     method: "GET",
@@ -164,7 +180,7 @@ async function readSupabaseData({ env, fetchFn }) {
 }
 
 async function writeSupabaseData(data, { env, fetchFn }) {
-  const settings = getSupabaseSettings(env);
+  const settings = getSupabaseWriteSettings(env);
   const url = `${settings.url}/rest/v1/${settings.table}`;
   const response = await fetchFn(url, {
     method: "POST",
@@ -202,7 +218,7 @@ function makeBackupRecord(data, settings, reason) {
 }
 
 async function writeSupabaseBackup(data, reason, { env, fetchFn }) {
-  const settings = getSupabaseSettings(env);
+  const settings = getSupabaseWriteSettings(env);
   const record = makeBackupRecord(data, settings, reason);
   const url = `${settings.url}/rest/v1/${settings.backupTable}`;
   const response = await fetchFn(url, {
@@ -230,9 +246,10 @@ async function writeSupabaseBackup(data, reason, { env, fetchFn }) {
 }
 
 async function writeSupabaseDataWithBackups(nextData, { env, fetchFn, expectedRevision }) {
+  const settings = getSupabaseWriteSettings(env);
   let previousData;
   try {
-    previousData = await readSupabaseData({ env, fetchFn });
+    previousData = await readSupabaseData({ fetchFn, settings });
   } catch (error) {
     throw new Error(`保存前无法读取线上数据，已停止保存：${error.message}`);
   }
@@ -284,7 +301,7 @@ export async function handleSiteDataRequest({
   }
 
   if (method === "GET") {
-    if (hasSupabaseConfig(env)) {
+    if (hasSupabaseReadConfig(env)) {
       try {
         const supabaseData = await readSupabaseData({ env, fetchFn });
         if (supabaseData) return siteDataResponse("supabase", supabaseData);
@@ -323,7 +340,7 @@ export async function handleSiteDataRequest({
       return jsonResponse(400, { error: error.message });
     }
 
-    if (hasSupabaseConfig(env)) {
+    if (hasSupabaseWriteConfig(env)) {
       try {
         const result = await writeSupabaseDataWithBackups(nextData, { env, fetchFn, expectedRevision });
         return jsonResponse(200, {
@@ -344,7 +361,7 @@ export async function handleSiteDataRequest({
     }
 
     if (env.VERCEL) {
-      return jsonResponse(501, { error: "线上还没有配置数据库环境变量。" });
+      return jsonResponse(501, { error: "线上还没有配置可写数据库环境变量。" });
     }
 
     await writeLocalData(nextData);
@@ -382,7 +399,7 @@ export async function handleSiteDataBackupRequest({
     return jsonResponse(403, { error: "测试服已禁用线上备份，不会写入主站或数据库。" }, authHeaders(auth));
   }
 
-  if (!hasSupabaseConfig(env)) {
+  if (!hasSupabaseWriteConfig(env)) {
     return jsonResponse(501, { error: "备份需要先配置 Supabase 数据库。" });
   }
 
@@ -397,7 +414,10 @@ export async function handleSiteDataBackupRequest({
   }
 
   try {
-    const currentData = await readSupabaseData({ env, fetchFn });
+    const currentData = await readSupabaseData({
+      fetchFn,
+      settings: getSupabaseWriteSettings(env),
+    });
     if (!currentData) return jsonResponse(404, { error: "没有找到可备份的线上数据。" });
 
     const backup = await writeSupabaseBackup(currentData, reason, { env, fetchFn });

@@ -120,6 +120,71 @@ test("site data API uses Supabase REST when database config is present", async (
   assert.equal(calls[0].options.headers.Authorization, "Bearer service-key");
 });
 
+test("site data API can read Supabase through read-only config on test service hosts", async () => {
+  const calls = [];
+  const response = await handleSiteDataRequest({
+    method: "GET",
+    headers: {
+      Host: "test.xn--idyr71g.icu",
+    },
+    env: {
+      VERCEL: "1",
+      SITE_DATA_READ_SUPABASE_URL: "https://readonly.supabase.co",
+      SITE_DATA_READ_SUPABASE_KEY: "read-public-key",
+    },
+    fallbackData: siteData,
+    fetchFn: async (url, options) => {
+      calls.push({ url, options });
+      return {
+        ok: true,
+        json: async () => [{ data: { ...siteData, identity: { title: "正式服只读内容", subtitle: "测试" } } }],
+      };
+    },
+  });
+  const body = JSON.parse(response.body);
+
+  assert.equal(response.status, 200);
+  assert.equal(body.source, "supabase");
+  assert.equal(body.data.identity.title, "正式服只读内容");
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].options.method, "GET");
+  assert.equal(calls[0].url, "https://readonly.supabase.co/rest/v1/site_pages?select=data&id=eq.homepage-v1&limit=1");
+  assert.equal(calls[0].options.headers.Authorization, "Bearer read-public-key");
+});
+
+test("site data API does not use read-only Supabase config for writes", async () => {
+  const calls = [];
+  const response = await handleSiteDataRequest({
+    method: "PUT",
+    headers: {
+      Authorization: "Bearer secret",
+    },
+    body: JSON.stringify({
+      data: siteData,
+      expectedRevision: createSiteDataRevision(siteData),
+    }),
+    env: {
+      VERCEL: "1",
+      SITE_ADMIN_TOKEN: "secret",
+      SITE_DATA_READ_SUPABASE_URL: "https://readonly.supabase.co",
+      SITE_DATA_READ_SUPABASE_KEY: "read-public-key",
+    },
+    fallbackData: siteData,
+    fetchFn: async (url, options) => {
+      calls.push({ url, options });
+      return {
+        ok: true,
+        json: async () => [{ data: siteData }],
+      };
+    },
+  });
+  const body = JSON.parse(response.body);
+
+  assert.equal(response.status, 501);
+  assert.match(body.error, /可写数据库环境变量/);
+  assert.equal(calls.length, 0);
+});
+
 test("site data API creates Supabase backups around online writes", async () => {
   const calls = [];
   const nextData = {
@@ -464,6 +529,12 @@ test("Supabase setup SQL keeps site data behind service-role writes", async () =
   assert.match(sql, /alter table public\.site_page_backups enable row level security/);
   assert.match(sql, /alter table public\.admin_sessions enable row level security/);
   assert.match(sql, /revoke all on table public\.site_pages from anon, authenticated/);
+  assert.match(sql, /grant select on table public\.site_pages to anon/);
+  assert.match(sql, /create policy "Public homepage can be read"/);
+  assert.match(sql, /on public\.site_pages/);
+  assert.match(sql, /for select/);
+  assert.match(sql, /to anon/);
+  assert.match(sql, /using \(id = 'homepage-v1'\)/);
   assert.match(sql, /revoke all on table public\.site_page_backups from anon, authenticated/);
   assert.match(sql, /revoke all on table public\.admin_sessions from anon, authenticated/);
   assert.match(sql, /grant select, insert, update on table public\.site_pages to service_role/);
