@@ -29,7 +29,7 @@ const sectionMeta = {
   channels: { label: "视频账号", itemName: "频道" },
 };
 
-const iconOptions = ["coffee", "leaf", "video", "phone", "cube"];
+const iconOptions = ["coffee", "newspaper", "leaf", "video", "phone", "cube"];
 const toneOptions = ["blue", "green", "orange", "purple", "pink", "red", "yellow", "cyan", "black", "white"];
 const statusToneOptions = ["live", "building", "plan", "quiet"];
 const variantOptions = ["large", "wide"];

@@ -626,6 +626,12 @@ svg {
   height: 66%;
 }
 
+.project-illustration img {
+  width: 86%;
+  height: 86%;
+  object-fit: contain;
+}
+
 .wide-icon {
   display: grid;
   width: calc(76px * var(--map-content-scale));
@@ -643,6 +649,12 @@ svg {
 .wide-icon svg {
   width: 68%;
   height: 68%;
+}
+
+.wide-icon img {
+  width: 86%;
+  height: 86%;
+  object-fit: contain;
 }
 
 .wide-content {

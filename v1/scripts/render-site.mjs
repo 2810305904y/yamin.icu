@@ -1,5 +1,9 @@
 import { siteData } from "../content/site-data.mjs";
 
+const newspaperIcon = `
+    <img class="project-icon-image" src="/v1/assets/pojian-newspaper-icon.png?v=1.6.25-transparent-bg" alt="" loading="lazy" decoding="async" />
+  `;
+
 const iconMap = {
   coffee: `
     <svg viewBox="0 0 64 64">
@@ -9,12 +13,8 @@ const iconMap = {
       <path d="M23 15v5M32 11v6M41 15v5" />
     </svg>
   `,
-  leaf: `
-    <svg viewBox="0 0 64 64">
-      <path d="M34 7c-9 6-15 16-17 29 9-2 19-8 29-17-2 9-8 19-17 29" />
-      <path d="M22 21c10 3 17 10 21 21" />
-    </svg>
-  `,
+  leaf: newspaperIcon,
+  newspaper: newspaperIcon,
   video: `
     <svg viewBox="0 0 48 48">
       <path d="M8 13h21l7 7-7 7H8V13Z" />

@@ -39,6 +39,7 @@ test("admin editor supports local draft and data export workflow", async () => {
   assert.match(script, /getDefaults/);
   assert.match(script, /moveItem/);
   assert.match(script, /deleteItem/);
+  assert.match(script, /"newspaper"/);
   assert.match(script, /renderPreview/);
   assert.match(script, /data-preview-section/);
   assert.match(html, /保存到线上/);
@@ -170,14 +171,14 @@ test("project cards keep a slightly slimmer desktop footprint", async () => {
   assert.doesNotMatch(siteStyles, /\.projects-grid\s*{[^}]*justify-self:\s*start/s);
   assert.doesNotMatch(siteStyles, /grid-template-columns:\s*minmax\(180px,\s*0\.86fr\)\s*minmax\(180px,\s*0\.86fr\)\s*minmax\(280px,\s*1\.2fr\)/);
   assert.doesNotMatch(siteStyles, /grid-template-columns:\s*minmax\(210px,\s*1fr\)\s*minmax\(210px,\s*1fr\)\s*minmax\(280px,\s*1\.28fr\)/);
-  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.6\.24-loading-stage-timeline/);
-  assert.match(rootHtml, /\/v1\/scripts\/render-site\.mjs\?v=1\.6\.24-loading-stage-timeline/);
+  assert.match(rootHtml, /\/v1\/styles\.css\?v=1\.6\.25-pojian-newspaper-transparent/);
+  assert.match(rootHtml, /\/v1\/scripts\/render-site\.mjs\?v=1\.6\.25-pojian-newspaper-transparent/);
   assert.match(rootHtml, /<span id="todos-title">施工中<\/span>/);
   assert.match(rootHtml, /<span id="thoughts-title">怪念头<\/span>/);
   assert.match(rootHtml, /<script nomodule>/);
   assert.match(rootHtml, /window\.location\.replace\("\/v1\/"\)/);
-  assert.match(v1Html, /\.\/styles\.css\?v=1\.6\.24-loading-stage-timeline/);
-  assert.match(v1Html, /\.\/scripts\/render-site\.mjs\?v=1\.6\.24-loading-stage-timeline/);
+  assert.match(v1Html, /\.\/styles\.css\?v=1\.6\.25-pojian-newspaper-transparent/);
+  assert.match(v1Html, /\.\/scripts\/render-site\.mjs\?v=1\.6\.25-pojian-newspaper-transparent/);
   assert.match(v1Html, /<span id="todos-title">施工中<\/span>/);
   assert.match(v1Html, /<span id="thoughts-title">怪念头<\/span>/);
 });
@@ -188,14 +189,14 @@ test("version naming uses the new three-part small release format", async () => 
   const namingRules = await readFile("项目进度/2026-06-01_版本命名规则.md", "utf8");
 
   assert.match(readme, /当前阶段：V1\.6/);
-  assert.match(readme, /当前小版本：V1\.6\.24/);
+  assert.match(readme, /当前小版本：V1\.6\.25/);
   assert.match(readme, /当前主页视觉基准（V1\.4 桌面 \/ V1\.5 手机 \/ V1\.6 加载）/);
   assert.match(readme, /2400 x 1200/);
   assert.match(readme, /site_page_backups/);
   assert.match(readme, /CRON_SECRET/);
   assert.match(readme, /admin_sessions/);
   assert.match(readme, /HttpOnly cookie/);
-  assert.match(adminHtml, /<p class="admin-kicker">V1\.6\.24<\/p>/);
+  assert.match(adminHtml, /<p class="admin-kicker">V1\.6\.25<\/p>/);
   assert.match(namingRules, /当前阶段记为 `V1\.6`/);
   assert.match(namingRules, /V1\.4\.0\s*->\s*V1\.4 阶段的视觉定稿起点/);
   assert.match(namingRules, /V1\.4\.1\s*->\s*后台保存保护与数据备份补丁/);
@@ -220,6 +221,7 @@ test("version naming uses the new three-part small release format", async () => 
   assert.match(namingRules, /V1\.6\.15\s*->\s*根页面不再误跳到 V1/);
   assert.match(namingRules, /V1\.6\.16\s*->\s*测试服只读正式数据/);
   assert.match(namingRules, /V1\.6\.17\s*->\s*加载进度条立即启动并前置到 60%/);
+  assert.match(namingRules, /V1\.6\.25\s*->\s*破茧项目报纸图标预览/);
   assert.match(namingRules, /三段式/);
 });
 

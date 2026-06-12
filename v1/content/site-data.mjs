@@ -9,7 +9,7 @@ export const siteData = {
       order: 10,
       visible: true,
       variant: "large",
-      icon: "leaf",
+      icon: "newspaper",
       title: "破茧",
       status: "已上线",
       statusTone: "live",

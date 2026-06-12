@@ -162,6 +162,8 @@ test("renderers output the visible homepage content", () => {
   assert.match(projectHtml, /coffeesleep\.cn/);
   assert.match(projectHtml, /破茧/);
   assert.match(projectHtml, /每天 3 分钟，看见算法之外的世界。/);
+  assert.match(projectHtml, /pojian-newspaper-icon\.png/);
+  assert.match(projectHtml, /v=1\.6\.25-transparent-bg/);
   assert.equal(largeLinkBlocks.length, 2);
   largeLinkBlocks.forEach((linkBlock) => {
     assert.doesNotMatch(linkBlock, /aria-hidden="true">›/);
@@ -170,6 +172,28 @@ test("renderers output the visible homepage content", () => {
   assert.match(thoughtHtml, /被选择的成本/);
   assert.match(thoughtHtml, /AI革命/);
   assert.match(channelHtml, /YouTube/);
+});
+
+test("legacy leaf project icons render as the newspaper mark", () => {
+  const projectHtml = renderProjects([
+    {
+      id: "legacy-pojian-icon",
+      order: 10,
+      visible: true,
+      variant: "large",
+      icon: "leaf",
+      title: "破茧",
+      status: "已上线",
+      statusTone: "live",
+      description: "每天 3 分钟，看见算法之外的世界。",
+      url: "https://pojian.space/",
+      urlLabel: "pojian.space",
+    },
+  ]);
+
+  assert.match(projectHtml, /pojian-newspaper-icon\.png/);
+  assert.match(projectHtml, /v=1\.6\.25-transparent-bg/);
+  assert.doesNotMatch(projectHtml, /M34 7c-9 6-15 16-17 29/);
 });
 
 test("thought pills render as motion-ready collision bodies", () => {
@@ -700,8 +724,8 @@ test("mobile homepage switches to a vertical V1.6 layout without changing the de
   const v1Html = await readFile("v1/index.html", "utf8");
   const styles = await readFile("v1/styles.css", "utf8");
 
-  assert.match(rootHtml, /v=1\.6\.24-loading-stage-timeline/);
-  assert.match(v1Html, /v=1\.6\.24-loading-stage-timeline/);
+  assert.match(rootHtml, /v=1\.6\.25-pojian-newspaper-transparent/);
+  assert.match(v1Html, /v=1\.6\.25-pojian-newspaper-transparent/);
   assert.match(styles, /@media \(max-width:\s*760px\)\s*{/);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body\s*{[\s\S]*overflow-y:\s*auto/s);
   assert.match(styles, /@media \(max-width:\s*760px\)[\s\S]*body::before\s*{[\s\S]*background-image:\s*none/s);
