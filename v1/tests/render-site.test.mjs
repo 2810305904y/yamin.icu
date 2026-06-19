@@ -174,6 +174,27 @@ test("renderers output the visible homepage content", () => {
   assert.match(channelHtml, /YouTube/);
 });
 
+test("project cards use the domain as link text when the label is empty", () => {
+  const projectHtml = renderProjects([
+    {
+      id: "roughcut",
+      order: 10,
+      visible: true,
+      variant: "large",
+      icon: "video",
+      title: "Roughcut",
+      status: "Building",
+      statusTone: "quiet",
+      description: "AI editing tool",
+      url: "https://roughcut.cn/",
+      urlLabel: "",
+    },
+  ]);
+
+  assert.match(projectHtml, /href="https:\/\/roughcut\.cn\/"/);
+  assert.match(projectHtml, />roughcut\.cn</);
+});
+
 test("legacy leaf project icons render as the newspaper mark", () => {
   const projectHtml = renderProjects([
     {

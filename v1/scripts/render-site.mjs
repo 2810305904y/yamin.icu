@@ -347,6 +347,21 @@ function safeHref(url) {
   return "#";
 }
 
+function projectLinkLabel(project, href) {
+  const explicitLabel = String(project.urlLabel == null ? "" : project.urlLabel).trim();
+  if (explicitLabel) return explicitLabel;
+
+  if (href !== "#") {
+    try {
+      return new URL(href).hostname.replace(/^www\./i, "");
+    } catch {
+      return "暂时没有门牌号";
+    }
+  }
+
+  return "暂时没有门牌号";
+}
+
 function renderIcon(name, className) {
   return `<span class="${className}" aria-hidden="true">${iconMap[name] || iconMap.cube}</span>`;
 }
@@ -357,6 +372,7 @@ function renderStatus(item) {
 
 function renderLargeProject(project, index) {
   const href = safeHref(project.url);
+  const linkLabel = projectLinkLabel(project, href);
   const targetAttrs = href === "#" ? "" : ' target="_blank" rel="noreferrer"';
   return `
     <a class="project-card project-card-large" href="${escapeHtml(href)}"${targetAttrs}>
@@ -365,7 +381,7 @@ function renderLargeProject(project, index) {
       <span class="project-name">${escapeHtml(project.title)}</span>
       <span class="project-copy">${escapeHtml(project.description)}</span>
       <span class="project-link">
-        <span>${escapeHtml(project.urlLabel || "暂时没有门牌号")}</span>
+        <span>${escapeHtml(linkLabel)}</span>
       </span>
       ${renderStatus(project)}
     </a>
